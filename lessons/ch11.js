@@ -256,6 +256,80 @@ while True:
           },
           { type: 'callout', kind: 'board', title: '실제 보드의 파일 보기', html: '<p>보드를 연결한 뒤 <b>🔌 연결됨</b> → <b>📁 보드의 파일 목록</b> 을 누르면 실제 micro:bit 안의 파일을 볼 수 있습니다.</p><p>파일이 가득 차면 <code>OSError: [Errno 28] ENOSPC</code> 가 납니다. 필요 없는 파일을 지우거나, python.microbit.org 에서 프로그램을 다시 전송하면 파일 시스템이 초기화됩니다.</p>' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 리스트를 파일에 저장하고 불러오기', code: `from microbit import *
+
+names = ["MIN", "SUA", "JUN", "HA"]
+
+# ① 저장: 한 줄에 하나씩
+with open("names.txt", "w") as f:
+    for n in names:
+        f.write(n + "\\n")
+
+# ② 불러오기
+loaded = []
+with open("names.txt", "r") as f:
+    for line in f:
+        name = line.strip()
+        if name:                       # 빈 줄은 건너뛴다
+            loaded.append(name)
+
+print("저장한 것:", names)
+print("불러온 것:", loaded)
+print("같은가?", names == loaded)
+display.scroll(str(len(loaded)), delay=80)`,
+            hint: '실행한 뒤 오른쪽 <b>💾 파일</b> 탭에서 <code>names.txt</code> 를 눌러 내용을 확인하세요.',
+            desc: '리스트를 파일로 남기는 가장 간단한 방법은 <b>한 줄에 하나씩</b> 쓰는 것입니다. 읽을 때는 <code>strip()</code> 으로 줄바꿈을 떼고 빈 줄을 걸러 냅니다.',
+            expect: "저장한 것: ['MIN', 'SUA', 'JUN', 'HA']\n불러온 것: ['MIN', 'SUA', 'JUN', 'HA']\n같은가? True"
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 저장 공간이 얼마나 남았나', code: `from microbit import *
+import os
+
+LIMIT = 30 * 1024          # micro:bit 파일 시스템은 약 30KB
+
+files = os.listdir()
+used = 0
+for name in files:
+    size = os.size(name)
+    used = used + size
+    print(name, "-", size, "바이트")
+
+print("─" * 24)
+print("사용:", used, "/", LIMIT, "바이트 (", used * 100 // LIMIT, "% )")
+
+level = min(5, used * 5 // LIMIT)
+display.clear()
+for y in range(level):
+    for x in range(5):
+        display.set_pixel(x, 4 - y, 9)`,
+            desc: '파일 목록을 훑으며 크기를 더합니다. 공간이 가득 차면 <code>OSError: [Errno 28]</code> 가 나므로, 파일을 많이 만드는 프로그램에서는 이렇게 <b>미리 확인</b>하는 것이 좋습니다.',
+            expect: 'names.txt - 16 바이트\n────────────────────────\n사용: 16 / 30720 바이트 ( 0 % )',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 폴더는 쓸 수 없습니다', code: `from microbit import *
+import os
+
+# ① 보통 이름은 잘 된다
+with open("ok.txt", "w") as f:
+    f.write("good")
+print("보통 이름:", os.listdir())
+
+# ② 경로(/)가 들어간 이름은 오류
+try:
+    with open("data/temp.txt", "w") as f:
+        f.write("bad")
+except OSError as e:
+    print("폴더 이름은 쓸 수 없습니다:", e)
+
+os.remove("ok.txt")
+display.show(Image.YES)`,
+            desc: 'micro:bit 에는 <b>폴더가 없습니다</b>. PC 파이썬 코드를 그대로 옮기면 경로 때문에 오류가 나기 쉬우니, 파일 이름은 <code>"temp.txt"</code> 처럼 단순하게 쓰세요. 굳이 구분하고 싶다면 <code>"data_temp.txt"</code> 처럼 이름에 표시합니다.',
+            expect: "보통 이름: ['ok.txt']\n폴더 이름은 쓸 수 없습니다: …"
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -575,6 +649,378 @@ while True:
     sleep(50)`,
             desc: '기록 줄 수를 직접 세어 상한을 두었습니다. 실제 프로젝트에서는 이렇게 <b>공간이 가득 차는 상황</b>을 미리 처리해 두는 것이 좋습니다.',
             expect: 'A 로 기록, 100줄이 넘으면 FULL, B 로 초기화'
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 시간 단위를 바꿔 가며 기록', code: `from microbit import *
+import log
+
+for unit, name in [(log.MILLISECONDS, "MS"), (log.SECONDS, "SEC")]:
+    log.set_labels("unit", "temp", timestamp=unit)
+    display.scroll(name, delay=55)
+
+    for i in range(4):
+        log.add(unit=name, temp=temperature())
+        sleep(400)
+
+# 시간 없이 기록하기
+log.set_labels("n", "value", timestamp=None)
+for i in range(3):
+    log.add(n=i, value=i * i)
+
+display.show(Image.YES)
+print("📊 로그 탭에서 세 가지 표를 확인하세요")`,
+            hint: '실행 뒤 <b>📊 로그</b> 탭을 열어 보세요. (마지막 <code>set_labels</code> 의 표만 남습니다)',
+            desc: '<code>set_labels()</code> 를 부를 때마다 <b>표가 새로 시작</b>합니다. <code>timestamp=None</code> 을 주면 시간 열이 아예 없어집니다 — 시간과 상관없는 측정값을 모을 때 씁니다.',
+            expect: '📊 로그 탭에서 세 가지 표를 확인하세요'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 기록하면서 콘솔로도 확인하기', code: `from microbit import *
+import log
+
+log.set_labels("temp", "light", timestamp=log.SECONDS)
+log.set_mirroring(True)          # ← 콘솔에도 함께 출력
+
+display.show(Image.ARROW_E)
+
+for i in range(6):
+    log.add(temp=temperature(), light=display.read_light_level())
+    display.show(i)
+    sleep(700)
+
+log.set_mirroring(False)
+display.show(Image.YES)`,
+            hint: '🧭 센서 탭의 온도 · 빛 슬라이더를 움직이며 콘솔을 보세요.',
+            desc: '<code>set_mirroring(True)</code> 를 켜면 기록할 때마다 <b>콘솔에도 똑같이</b> 출력됩니다. 실제 보드에서는 USB 시리얼로 나가므로, 측정이 제대로 되고 있는지 실시간으로 확인할 수 있습니다.',
+            expect: '{"temp": "24", "light": "128"}\n{"temp": "25", "light": "130"} …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 기록 간격을 조절할 수 있게', code: `from microbit import *
+import log
+
+INTERVALS = [1000, 3000, 10000]      # 1초 · 3초 · 10초
+choice = 0
+
+log.set_labels("temp", "light", timestamp=log.SECONDS)
+next_time = running_time()
+count = 0
+
+display.scroll("1S", delay=55)
+
+while True:
+    # A: 간격 바꾸기
+    if button_a.was_pressed():
+        choice = (choice + 1) % len(INTERVALS)
+        display.scroll(str(INTERVALS[choice] // 1000) + "S", delay=55)
+        next_time = running_time()
+
+    # B: 지금까지 몇 개 모았나
+    if button_b.was_pressed():
+        display.scroll(str(count), delay=80)
+
+    if running_time() >= next_time:
+        log.add(temp=temperature(), light=display.read_light_level())
+        count = count + 1
+        next_time = next_time + INTERVALS[choice]
+        display.show(Image.HEART)
+        sleep(120)
+
+    display.show(count % 10)
+    sleep(60)`,
+            desc: '측정 간격을 <b>실행 중에</b> 바꿀 수 있게 했습니다. 짧게 하면 자세하지만 공간이 빨리 차고, 길게 하면 오래 기록할 수 있습니다. 실제 관측 장비도 이런 설정을 제공합니다.',
+            expect: 'A 로 1초 · 3초 · 10초 간격을 바꾸며 기록합니다.',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 기록하고 분석하기' },
+          { type: 'p', html: '측정하고 저장해서 나중에 분석하는 것은 과학 탐구의 기본입니다. 기록한 데이터는 <b>📊 로그</b> 탭에서 CSV 로 내려받아 스프레드시트로 그래프를 그려 보세요.' },
+          {
+            type: 'code', title: '응용 예제 11-1. 하루 온도 기록계', code: `from microbit import *
+import log
+
+INTERVAL = 10000          # 실제로는 60000(1분)이나 300000(5분)
+MAX_ROWS = 200
+
+log.set_labels("temp", "light", timestamp=log.MINUTES)
+
+count = 0
+next_time = running_time()
+tmin, tmax = 99, -99
+
+display.scroll("REC", delay=55)
+
+while True:
+    if running_time() >= next_time and count < MAX_ROWS:
+        t = temperature()
+        log.add(temp=t, light=display.read_light_level())
+        count = count + 1
+        next_time = next_time + INTERVAL
+
+        tmin = min(tmin, t)
+        tmax = max(tmax, t)
+        print(count, "회 /", t, "도 (최저", tmin, "최고", tmax, ")")
+
+    # A: 지금 상태 요약
+    if button_a.was_pressed():
+        display.scroll(str(count) + "X " + str(tmin) + "-" + str(tmax), delay=75)
+
+    # B: 기록 지우고 새로 시작
+    if button_b.was_pressed():
+        log.delete()
+        count, tmin, tmax = 0, 99, -99
+        display.scroll("CLR", delay=55)
+
+    # 기록 중임을 알리는 표시
+    if count >= MAX_ROWS:
+        display.show(Image.SQUARE)          # 가득 참
+    else:
+        display.show(Image.HEART if (running_time() // 600) % 2 else Image.HEART_SMALL)
+
+    sleep(80)`,
+            desc: '일정 간격으로 온도와 밝기를 기록하면서 <b>최저 · 최고</b>를 함께 추적합니다. 교실 창가에 하루 두고 측정한 뒤 CSV 를 내려받아 그래프를 그려 보세요. <code>MAX_ROWS</code> 로 공간이 넘치지 않게 막았습니다.',
+            expect: '1 회 / 24 도 (최저 24 최고 24 )',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 11-2. 전원을 꺼도 남는 걸음 수', code: `from microbit import *
+import music
+
+FILE = "steps.txt"
+THRESHOLD = 1400
+SAVE_EVERY = 10               # 10걸음마다 저장 (너무 자주 쓰면 느려진다)
+
+
+def load():
+    try:
+        with open(FILE, "r") as f:
+            return int(f.read())
+    except (OSError, ValueError):
+        return 0
+
+
+def save(n):
+    with open(FILE, "w") as f:
+        f.write(str(n))
+
+
+steps = load()
+unsaved = 0
+above = False
+
+print("이어서 세기:", steps, "걸음")
+display.scroll(str(steps), delay=70)
+display.show(Image.STICKFIGURE)
+
+while True:
+    if accelerometer.get_strength() > THRESHOLD:
+        if not above:
+            steps = steps + 1
+            unsaved = unsaved + 1
+            above = True
+            if unsaved >= SAVE_EVERY:
+                save(steps)
+                unsaved = 0
+                music.pitch(1000, 30)
+            sleep(250)
+    else:
+        above = False
+
+    if button_a.was_pressed():
+        save(steps)
+        display.scroll(str(steps), delay=80)
+        display.show(Image.STICKFIGURE)
+
+    if button_b.was_pressed():
+        steps, unsaved = 0, 0
+        save(steps)
+        display.show(Image.NO)
+        sleep(500)
+        display.show(Image.STICKFIGURE)
+
+    sleep(30)`,
+            hint: '🧭 <b>흔들기</b> 버튼을 여러 번 눌러 걸음을 만든 뒤, 페이지를 새로 고쳐 이어지는지 확인하세요.',
+            desc: '걸음 수를 파일에 저장해 <b>전원을 꺼도 이어집니다</b>. 매 걸음마다 저장하면 느려지므로 10걸음마다 한 번만 씁니다 — 실제 기기들도 쓰는 절충입니다.',
+            expect: '이어서 세기: 37 걸음',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 11-3. 출석 체크', code: `from microbit import *
+import music
+
+MEMBERS = ["MIN", "SUA", "JUN", "HA", "YUL"]
+FILE = "attend.txt"
+
+index = 0
+present = set()
+
+
+def load():
+    got = set()
+    try:
+        with open(FILE, "r") as f:
+            for line in f:
+                name = line.strip()
+                if name:
+                    got.add(name)
+    except OSError:
+        pass
+    return got
+
+
+def save():
+    with open(FILE, "w") as f:
+        for name in MEMBERS:
+            if name in present:
+                f.write(name + "\\n")
+
+
+present = load()
+print("불러온 출석:", present)
+display.scroll(MEMBERS[index], delay=60)
+
+while True:
+    # A: 다음 사람
+    if button_a.was_pressed():
+        index = (index + 1) % len(MEMBERS)
+        display.scroll(MEMBERS[index], delay=60)
+
+    # B: 출석 체크 (있으면 빼고, 없으면 넣기)
+    if button_b.was_pressed():
+        name = MEMBERS[index]
+        if name in present:
+            present.discard(name)
+            music.pitch(400, 100)
+        else:
+            present.add(name)
+            music.pitch(900, 100)
+        save()
+        print(name, "→", "출석" if name in present else "결석")
+
+    # 로고: 전체 현황
+    if pin_logo.is_touched():
+        display.scroll(str(len(present)) + "/" + str(len(MEMBERS)), delay=80)
+        print("출석:", sorted(present))
+        sleep(300)
+
+    display.show(Image.YES if MEMBERS[index] in present else Image.NO)
+    sleep(120)`,
+            desc: '<b>집합(set)</b>은 “있다 · 없다” 만 다루는 자료형으로 출석 체크에 딱 맞습니다. <code>add</code> · <code>discard</code> · <code>in</code> 세 가지만 알면 됩니다. 체크할 때마다 파일에 저장되어 <b>전원을 꺼도 유지</b>됩니다.',
+            expect: 'A 로 이름을 넘기고 B 로 출석을 체크합니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 11-4. 버튼으로 재는 실험 데이터 수집기', code: `from microbit import *
+import log
+import music
+
+log.set_labels("n", "temp", "light", "sound", timestamp=log.SECONDS)
+n = 0
+
+display.scroll("DATA", delay=55)
+display.show(Image.ARROW_E)
+
+while True:
+    # A: 지금 값을 한 번 기록 (수동 측정)
+    if button_a.was_pressed():
+        n = n + 1
+        t = temperature()
+        l = display.read_light_level()
+        s = microphone.sound_level()
+        log.add(n=n, temp=t, light=l, sound=s)
+
+        print(n, "번째 →", t, "도 /", l, "/", s)
+        display.show(Image.YES)
+        music.pitch(1000, 60)
+        sleep(350)
+        display.show(n % 10)
+
+    # B: 몇 개 모았는지
+    if button_b.was_pressed():
+        display.scroll(str(n), delay=80)
+        display.show(n % 10)
+
+    # 로고: 전부 지우기
+    if pin_logo.is_touched():
+        log.delete()
+        n = 0
+        display.scroll("CLR", delay=55)
+        display.show(Image.ARROW_E)
+
+    sleep(60)`,
+            desc: '자동이 아니라 <b>원할 때만</b> 측정합니다. “창가에서 한 번, 복도에서 한 번, 교실 가운데서 한 번” 처럼 장소를 옮겨 가며 재는 탐구 활동에 알맞습니다. CSV 로 받아 막대그래프로 비교해 보세요.',
+            expect: '1 번째 → 24 도 / 128 / 40',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 11-5. 기록이 남는 반응 속도 게임', code: `from microbit import *
+import random
+import music
+
+FILE = "best.txt"
+
+
+def load_best():
+    try:
+        with open(FILE, "r") as f:
+            return int(f.read())
+    except (OSError, ValueError):
+        return 9999
+
+
+def save_best(ms):
+    with open(FILE, "w") as f:
+        f.write(str(ms))
+
+
+best = load_best()
+full = Image("99999:99999:99999:99999:99999")
+
+display.scroll("B" + (str(best) if best < 9999 else "-"), delay=70)
+
+while True:
+    display.scroll("WAIT", delay=60)
+    button_a.was_pressed()
+
+    # 부정 출발 확인
+    cheat = False
+    wait = random.randint(2000, 5000)
+    t0 = running_time()
+    while running_time() - t0 < wait:
+        if button_a.was_pressed():
+            cheat = True
+            break
+        sleep(20)
+
+    if cheat:
+        display.scroll("EARLY", delay=70)
+        music.play(music.WAWAWAWAA)
+    else:
+        display.show(full)
+        start = running_time()
+        while not button_a.was_pressed():
+            sleep(5)
+        ms = running_time() - start
+
+        display.clear()
+        display.scroll(str(ms), delay=70)
+        print("기록:", ms, "ms / 최고:", best)
+
+        if ms < best:
+            best = ms
+            save_best(best)
+            display.scroll("NEW BEST", delay=70)
+            music.play(music.POWER_UP)
+        else:
+            music.play(music.BA_DING)
+
+    display.show(Image.ARROW_E)
+    while not button_b.was_pressed():
+        sleep(50)`,
+            desc: '4장의 반응 속도 게임에 <b>최고 기록 저장</b>을 더했습니다. 전원을 껐다 켜도 기록이 남아 여러 날에 걸쳐 도전할 수 있습니다. 부정 출발 확인도 들어 있습니다.',
+            expect: '기록: 287 ms / 최고: 265',
+            nondeterministic: true
           },
 
           { type: 'h', text: '2교시 · 11장 요약' },

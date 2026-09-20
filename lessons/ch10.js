@@ -185,6 +185,87 @@ while True:
           },
           { type: 'callout', kind: 'more', title: '왜 22.5 를 더할까?', html: '<p>8방향으로 나누면 한 방향이 <b>45°</b> 를 차지합니다. 북(N)은 0° 를 <b>가운데</b> 로 하므로 실제 범위는 <b>−22.5° ~ +22.5°</b>, 즉 337.5° ~ 22.5° 입니다.</p><p>그냥 <code>h // 45</code> 로 나누면 0~44 만 N 이 되어 범위가 어긋납니다. 미리 <b>22.5 를 더해</b> 범위를 0 ~ 45 로 옮긴 뒤 나누면 정확해집니다.</p>' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 16방위로 더 자세히', code: `from microbit import *
+
+NAMES16 = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+           "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+
+compass.calibrate()
+last = ""
+
+while True:
+    h = compass.heading()
+    # 한 칸이 22.5도
+    name = NAMES16[int((h + 11.25) // 22.5) % 16]
+
+    if name != last:
+        print(h, "도 →", name)
+        display.scroll(name, delay=70)
+        last = name
+
+    sleep(200)`,
+            hint: '🧭 <b>센서 탭</b>의 방위각 슬라이더를 천천히 돌려 보세요.',
+            desc: '4방위(90°) · 8방위(45°) · 16방위(22.5°) 모두 <b>같은 공식</b>입니다 — 한 칸의 절반을 더하고 한 칸 크기로 나눕니다. 배가 항해할 때 쓰는 방위 표기법입니다.',
+            expect: '0 도 → N\n30 도 → NNE\n95 도 → E …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 자기장을 세 축으로 보기', code: `from microbit import *
+
+compass.calibrate()
+
+while True:
+    x = compass.get_x()
+    y = compass.get_y()
+    z = compass.get_z()
+
+    print("x:", x, " y:", y, " z:", z,
+          " 세기:", compass.get_field_strength(), "nT")
+
+    # x · y 를 화면 위치로 (자기장이 향하는 쪽)
+    col = max(0, min(4, scale(x, from_=(-40000, 40000), to=(0, 4))))
+    row = max(0, min(4, scale(y, from_=(-40000, 40000), to=(4, 0))))
+    display.clear()
+    display.set_pixel(2, 2, 2)
+    display.set_pixel(col, row, 9)
+
+    sleep(300)`,
+            hint: '🧭 방위각 슬라이더를 돌리면 점이 원을 그리며 돕니다.',
+            desc: '나침반도 가속도 센서처럼 <b>세 축</b>으로 자기장을 잽니다. <code>heading()</code> 은 사실 이 <code>x</code> · <code>y</code> 값으로 각도를 계산한 결과입니다. 값의 단위는 나노테슬라(nT)입니다.',
+            expect: 'x: 0  y: 40000  z: -20000  세기: 50000 nT',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 보정 상태 확인하고 다시 하기', code: `from microbit import *
+
+display.scroll("CAL?", delay=60)
+
+while True:
+    ok = compass.is_calibrated()
+    display.show(Image.YES if ok else Image.NO)
+
+    if button_a.was_pressed():
+        # 보정하기
+        display.scroll("CAL", delay=60)
+        compass.calibrate()
+        display.show(Image.YES)
+        print("보정 완료. 방위각:", compass.heading())
+        sleep(600)
+
+    if button_b.was_pressed():
+        # 보정 기록 지우기 (다시 보정이 필요해진다)
+        compass.clear_calibration()
+        print("보정 기록을 지웠습니다")
+        display.show(Image.NO)
+        sleep(600)
+
+    sleep(150)`,
+            desc: 'A 로 보정하고 B 로 보정을 취소합니다. 실제 보드에서는 <b>자석이나 노트북 옆</b>에서 보정하면 값이 어긋나므로, 그럴 때 B 로 지우고 다른 곳에서 다시 보정하면 됩니다.',
+            expect: '보정되어 있으면 체크, 아니면 엑스가 보입니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -451,6 +532,361 @@ while True:
             nondeterministic: true
           },
           { type: 'callout', kind: 'board', title: '실제 보드에서 해 보기', html: '<p>냉장고 자석, 이어폰(안에 자석이 있습니다), 스피커, 쇠로 된 문고리 등에 micro:bit 를 가까이 대 보세요. 값이 크게 변합니다.</p><p>반대로 <b>보정할 때는 자석 · 노트북 · 스마트폰에서 멀리 떨어져</b> 있어야 정확합니다.</p>' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 두 방향 사이의 각도 구하기', code: `from microbit import *
+
+
+def angle_between(a, b):
+    """두 방위각 사이의 최소 차이 (0 ~ 180)"""
+    return abs((a - b + 180) % 360 - 180)
+
+
+def turn_dir(now, target):
+    """어느 쪽으로 도는 게 빠를까 ('R' 또는 'L')"""
+    return "R" if (target - now) % 360 < 180 else "L"
+
+
+for now, target in [(10, 350), (350, 10), (0, 180), (90, 100), (270, 30)]:
+    print(now, "→", target, ": 차이", angle_between(now, target),
+          "도,", turn_dir(now, target), "쪽으로")
+
+compass.calibrate()
+target = 0
+
+while True:
+    h = compass.heading()
+    d = angle_between(h, target)
+    display.show(Image.YES if d < 15 else (Image.ARROW_E if turn_dir(h, target) == "R" else Image.ARROW_W))
+    sleep(200)`,
+            desc: '각도는 <b>360도에서 다시 0도로 이어지므로</b> 단순히 빼면 안 됩니다. <code>abs((a - b + 180) % 360 - 180)</code> 이 최소 차이를 구하는 표준 공식입니다. 10도와 350도의 차이는 340이 아니라 <b>20</b> 입니다.',
+            expect: '10 → 350 : 차이 20 도, L 쪽으로\n350 → 10 : 차이 20 도, R 쪽으로'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 온 길을 되짚어 가기', code: `from microbit import *
+import music
+
+compass.calibrate()
+saved = None
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    h = compass.heading()
+
+    # A: 지금 방향을 기억
+    if button_a.was_pressed():
+        saved = h
+        display.show(Image.YES)
+        music.pitch(880, 120)
+        print("기억한 방향:", saved, "도 / 되돌아갈 방향:", (saved + 180) % 360)
+        sleep(500)
+
+    if saved is None:
+        display.show(Image.SQUARE_SMALL)
+    else:
+        back = (saved + 180) % 360        # 정반대 방향
+        diff = abs((back - h + 180) % 360 - 180)
+        if diff < 15:
+            display.show(Image.YES)
+        elif (back - h) % 360 < 180:
+            display.show(Image.ARROW_E)
+        else:
+            display.show(Image.ARROW_W)
+
+    sleep(150)`,
+            hint: '🧭 방위각을 정한 뒤 A 를 누르고, 슬라이더를 돌려 반대 방향을 찾아보세요.',
+            desc: '출발할 때 방향을 기억해 두면 <b>정반대 방향(+180도)</b>이 돌아가는 길입니다. 숲이나 넓은 곳에서 길을 잃지 않게 해 주는 간단한 방법입니다.',
+            expect: 'A 로 방향을 기억하면, 반대 방향을 향할 때 체크가 뜹니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 얼마나 빨리 돌고 있나', code: `from microbit import *
+
+compass.calibrate()
+prev = compass.heading()
+prev_t = running_time()
+
+while True:
+    h = compass.heading()
+    t = running_time()
+
+    # 각도 변화량 (-180 ~ 180)
+    delta = (h - prev + 180) % 360 - 180
+    dt = max(1, t - prev_t)
+    speed = abs(delta) * 1000 // dt          # 초당 몇 도
+
+    if speed > 5:
+        print("회전 속도:", speed, "도/초", "(" + ("오른쪽" if delta > 0 else "왼쪽") + ")")
+
+    level = min(4, speed // 60)
+    display.clear()
+    for y in range(level + 1):
+        for x in range(5):
+            display.set_pixel(x, 4 - y, 9)
+
+    prev, prev_t = h, t
+    sleep(120)`,
+            hint: '🧭 방위각 슬라이더를 빠르게 움직여 보세요.',
+            desc: '방위각의 <b>변화량 ÷ 걸린 시간</b>이 회전 속도입니다. 각도가 순환하므로 여기서도 <code>(차이 + 180) % 360 - 180</code> 공식을 씁니다. 자이로스코프 없이 회전을 재는 방법입니다.',
+            expect: '회전 속도: 120 도/초 (오른쪽)',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 방향으로 만드는 도구' },
+          { type: 'p', html: '나침반은 야외 활동과 탐사에 쓰는 도구입니다. 실제 보드를 들고 운동장이나 복도에서 해 보면 훨씬 재미있습니다.' },
+          {
+            type: 'code', title: '응용 예제 10-1. 디지털 나침반 완성판', code: `from microbit import *
+
+RIM = [(2, 0), (3, 0), (4, 0), (4, 1), (4, 2), (4, 3),
+       (4, 4), (3, 4), (2, 4), (1, 4), (0, 4), (0, 3),
+       (0, 2), (0, 1), (0, 0), (1, 0)]
+NAMES = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+if not compass.is_calibrated():
+    display.scroll("CAL", delay=60)
+    compass.calibrate()
+
+display.scroll("N", delay=70)
+
+while True:
+    h = compass.heading()
+    rel = (360 - h) % 360
+
+    # 두 칸의 밝기를 나눠 부드럽게 표시
+    pos = rel / 22.5
+    i = int(pos) % len(RIM)
+    j = (i + 1) % len(RIM)
+    frac = pos - int(pos)
+
+    display.clear()
+    display.set_pixel(2, 2, 2)
+    x1, y1 = RIM[i]
+    x2, y2 = RIM[j]
+    display.set_pixel(x1, y1, max(1, int(9 * (1 - frac))))
+    display.set_pixel(x2, y2, max(1, int(9 * frac)))
+
+    # A: 각도 숫자 보기 / B: 방위 이름 보기
+    if button_a.was_pressed():
+        display.scroll(str(h), delay=80)
+    if button_b.was_pressed():
+        display.scroll(NAMES[int((h + 22.5) // 45) % 8], delay=80)
+
+    sleep(100)`,
+            hint: '🧭 방위각 슬라이더를 돌리면 점이 계속 북쪽을 가리킵니다.',
+            desc: '테두리 점이 <b>항상 북쪽</b>을 가리키고, 두 칸의 밝기를 나눠 부드럽게 움직입니다. A 로 각도(0~359), B 로 방위 이름을 확인할 수 있습니다. 그대로 실제 보드에 올려 쓸 수 있습니다.',
+            expect: '보드를 돌려도 점이 북쪽을 가리키고, A · B 로 각도와 방위를 봅니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 10-2. 목적지 안내기', code: `from microbit import *
+import music
+
+if not compass.is_calibrated():
+    compass.calibrate()
+
+target = None
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    h = compass.heading()
+
+    # A: 지금 보고 있는 쪽을 목적지로 설정
+    if button_a.was_pressed():
+        target = h
+        display.show(Image.YES)
+        music.pitch(880, 120)
+        print("목적지 방향:", target, "도")
+        sleep(500)
+
+    # B: 목적지 해제
+    if button_b.was_pressed():
+        target = None
+        display.show(Image.NO)
+        sleep(400)
+
+    if target is None:
+        display.show(Image.SQUARE_SMALL)
+    else:
+        diff = (target - h) % 360
+        off = abs((diff + 180) % 360 - 180)
+
+        if off < 12:
+            display.show(Image.HEART)
+            music.pitch(1100, 50)
+        elif off < 45:
+            display.show(Image.ARROW_NE if diff < 180 else Image.ARROW_NW)
+        elif diff < 180:
+            display.show(Image.ARROW_E)
+        else:
+            display.show(Image.ARROW_W)
+
+    sleep(150)`,
+            desc: 'A 로 목적지 방향을 기억한 뒤, 그 방향을 향할 때까지 <b>좌 · 우 · 비스듬히</b> 안내합니다. 가까워질수록 화살표가 대각선으로 바뀌어 미세 조정을 돕습니다.',
+            expect: '목적지를 설정하면 그 방향으로 화살표가 안내합니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 10-3. 숨은 자석 찾기 게임', code: `from microbit import *
+import music
+
+if not compass.is_calibrated():
+    compass.calibrate()
+
+display.scroll("FIND", delay=60)
+base = compass.get_field_strength()
+print("기준 자기장:", base, "nT")
+found = 0
+last_beep = 0
+
+display.show(Image.DIAMOND_SMALL)
+
+while True:
+    now = compass.get_field_strength()
+    diff = abs(now - base)
+
+    # 차이가 클수록 삐 소리가 빨라지고 화면이 커진다
+    if diff > 2500:
+        level = min(4, diff // 6000)
+        pics = [Image.DIAMOND_SMALL, Image.DIAMOND, Image.SQUARE_SMALL,
+                Image.SQUARE, Image.SKULL]
+        display.show(pics[level])
+
+        gap = max(80, 700 - level * 150)
+        if running_time() - last_beep > gap:
+            music.pitch(600 + level * 250, 50)
+            last_beep = running_time()
+
+        if level >= 4:
+            found = found + 1
+            display.show(Image.HEART)
+            music.play(music.POWER_UP)
+            print("찾았다!", found, "개 / 세기", diff)
+            sleep(1200)
+            display.show(Image.DIAMOND_SMALL)
+    else:
+        display.show(Image.DIAMOND_SMALL)
+
+    # A: 기준값 다시 잡기
+    if button_a.was_pressed():
+        base = compass.get_field_strength()
+        display.show(Image.YES)
+        print("기준 재설정:", base)
+        sleep(400)
+
+    sleep(80)`,
+            desc: '방 안 여러 곳에 자석을 숨기고 찾는 게임입니다. 가까워질수록 <b>소리가 빨라지고 그림이 커집니다</b>. 실제 보드로 냉장고 문, 이어폰, 스피커에 가까이 대 보세요.',
+            expect: '자석이 가까워지면 소리가 빨라지고, 아주 가까우면 하트가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 10-4. 몇 바퀴 돌았나 (회전 각도계)', code: `from microbit import *
+import music
+
+if not compass.is_calibrated():
+    compass.calibrate()
+
+prev = compass.heading()
+total = 0                 # 누적 회전 각도 (양수 = 오른쪽)
+
+display.show(0)
+
+while True:
+    h = compass.heading()
+    delta = (h - prev + 180) % 360 - 180
+
+    # 튀는 값은 무시 (한 번에 90도 넘게 돌 수는 없다고 본다)
+    if abs(delta) < 90:
+        total = total + delta
+    prev = h
+
+    turns = int(abs(total) // 360)
+    display.show(turns % 10)
+
+    if button_a.was_pressed():
+        print("누적:", int(total), "도 =", round(total / 360, 2), "바퀴")
+        display.scroll(str(int(total)), delay=80)
+        display.show(turns % 10)
+
+    if button_b.was_pressed():
+        total = 0
+        display.show(Image.NO)
+        music.pitch(400, 120)
+        sleep(400)
+        display.show(0)
+
+    sleep(80)`,
+            hint: '🧭 방위각 슬라이더를 0 → 359 로 여러 번 돌려 보세요.',
+            desc: '각도 변화를 <b>계속 더해</b> 몇 바퀴 돌았는지 셉니다. 한 번에 90도 넘게 변하면 센서가 튄 것으로 보고 무시합니다. 회전하는 장치의 회전수를 세는 데 쓸 수 있습니다.',
+            expect: '누적: 735 도 = 2.04 바퀴',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 10-5. 야외 활동 만능 도구', code: `from microbit import *
+
+RIM = [(2, 0), (3, 0), (4, 0), (4, 1), (4, 2), (4, 3),
+       (4, 4), (3, 4), (2, 4), (1, 4), (0, 4), (0, 3),
+       (0, 2), (0, 1), (0, 0), (1, 0)]
+MODES = ["COMPASS", "LEVEL", "TEMP"]
+mode = 0
+
+if not compass.is_calibrated():
+    display.scroll("CAL", delay=60)
+    compass.calibrate()
+display.scroll(MODES[mode], delay=60)
+
+
+def show_compass():
+    rel = (360 - compass.heading()) % 360
+    i = int((rel + 11.25) // 22.5) % len(RIM)
+    display.clear()
+    display.set_pixel(2, 2, 2)
+    x, y = RIM[i]
+    display.set_pixel(x, y, 9)
+
+
+def show_level():
+    x = accelerometer.get_x()
+    y = accelerometer.get_y()
+    if abs(x) < 60 and abs(y) < 60:
+        display.show(Image.YES)
+    else:
+        display.clear()
+        display.set_pixel(2, 2, 2)
+        display.set_pixel(scale(x, from_=(-1024, 1024), to=(0, 4)),
+                          scale(y, from_=(-1024, 1024), to=(0, 4)), 9)
+
+
+while True:
+    if accelerometer.is_gesture("face down"):
+        display.off()
+        sleep(300)
+        continue
+    display.on()
+
+    if button_a.was_pressed():
+        mode = (mode + 1) % len(MODES)
+        display.scroll(MODES[mode], delay=55)
+
+    if mode == 0:
+        show_compass()
+    elif mode == 1:
+        show_level()
+    else:
+        display.show(str(temperature())[0])
+
+    if button_b.was_pressed():
+        if mode == 0:
+            display.scroll(str(compass.heading()), delay=80)
+        elif mode == 2:
+            display.scroll(str(temperature()) + "C", delay=80)
+
+    sleep(120)`,
+            desc: '<b>나침반 · 수평계 · 온도계</b>를 한 프로그램에 담았습니다. A 로 기능을 바꾸고 B 로 자세한 값을 보며, 엎어 두면 화면을 꺼 전력을 아낍니다. 실제 보드에 올려 야외 활동에 써 보세요.',
+            expect: 'A 로 COMPASS → LEVEL → TEMP 로 바뀝니다.',
+            nondeterministic: true
+          },
 
           { type: 'h', text: '2교시 · 10장 요약' },
           {

@@ -229,6 +229,89 @@ display.clear()`,
           },
           { type: 'callout', kind: 'board', title: 'V1 에서 소리 듣기', html: 'micro:bit V1 에는 스피커가 없습니다. <b>P0 ↔ 이어폰 팁</b>, <b>GND ↔ 이어폰 슬리브</b> 를 악어클립으로 연결하면 들을 수 있습니다. V2 에서도 <code>speech.say("hi", pin=pin1)</code> 처럼 다른 핀을 쓸 수 있습니다.' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 목소리 값을 하나씩 바꿔 보기', code: `from microbit import *
+import speech
+
+WORD = "micro bit"
+
+display.scroll("PITCH", delay=55)
+for p in [20, 64, 120, 200]:
+    print("pitch =", p)
+    display.show(p // 50)
+    speech.say(WORD, pitch=p)
+    sleep(250)
+
+display.scroll("SPEED", delay=55)
+for s in [30, 72, 120, 180]:
+    print("speed =", s)
+    display.show(s // 50)
+    speech.say(WORD, speed=s)
+    sleep(250)
+
+display.clear()`,
+            desc: '한 번에 하나씩만 바꿔 들어 보면 각 값이 어떤 역할인지 확실히 알 수 있습니다. <b>pitch 와 speed 는 작을수록 높고 빠릅니다</b> — 헷갈리기 쉬우니 직접 들어 보세요.',
+            expect: '같은 단어가 여덟 가지 목소리로 들립니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 숫자를 영어로 읽어 주기', code: `from microbit import *
+import speech
+
+ONES = ["zero", "one", "two", "three", "four",
+        "five", "six", "seven", "eight", "nine"]
+TEENS = ["ten", "eleven", "twelve", "thirteen", "fourteen",
+         "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+TENS = ["", "ten", "twenty", "thirty", "forty", "fifty",
+        "sixty", "seventy", "eighty", "ninety"]
+
+
+def say_number(n):
+    if n < 10:
+        return ONES[n]
+    if n < 20:
+        return TEENS[n - 10]
+    if n < 100:
+        return TENS[n // 10] + (" " + ONES[n % 10] if n % 10 else "")
+    return "a lot"
+
+
+for n in [0, 7, 13, 25, 40, 99]:
+    print(n, "→", say_number(n))
+    display.scroll(str(n), delay=60)
+    speech.say(say_number(n))
+    sleep(200)`,
+            desc: '<code>speech.say("25")</code> 는 제대로 읽지 못합니다. 숫자를 <b>영어 단어</b>로 바꿔 주는 함수를 만들어 두면 온도 · 시간 · 점수를 말하게 할 때 계속 재사용할 수 있습니다.',
+            expect: '0 → zero\n7 → seven\n13 → thirteen\n25 → twenty five\n40 → forty\n99 → ninety nine'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 음 높이를 정해 노래하기', code: `from microbit import *
+import speech
+
+# #숫자 = 음 높이 (작을수록 높음)
+SONG = [
+    ("#124", "DOWWWW"), ("#111", "REYYYY"), ("#99", "MIYYYY"),
+    ("#93", "FAWWWW"), ("#83", "SOWWWW"), ("#74", "LAWWWW"),
+    ("#66", "TIYYYY"), ("#62", "DOWWWW"),
+]
+
+display.show(Image.MUSIC_QUAVER)
+
+for pitch_mark, sound in SONG:
+    speech.sing(pitch_mark + sound)
+    sleep(120)
+
+sleep(400)
+# 거꾸로 내려오기
+for pitch_mark, sound in reversed(SONG):
+    speech.sing(pitch_mark + sound)
+    sleep(120)
+
+display.clear()`,
+            desc: '<code>sing()</code> 은 발음 기호 앞에 <code>#숫자</code> 로 <b>음 높이</b>를 지정합니다. 모음을 여러 번 반복하면 길게 늘여 부릅니다. <code>reversed()</code> 로 리스트를 거꾸로 훑어 내려오는 음계를 만들었습니다.',
+            expect: '도레미파솔라시도를 올라갔다 내려옵니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -551,6 +634,367 @@ while True:
             nondeterministic: true
           },
           { type: 'callout', kind: 'board', title: 'V1 에는 마이크가 없습니다', html: '<code>microphone</code> 과 <code>audio.SoundEffect</code>, <code>Sound.*</code> 내장 효과음은 <b>micro:bit V2 전용</b>입니다. V1 에서 실행하면 <code>AttributeError</code> 가 납니다. V1 으로 소리를 감지하려면 별도의 소리 센서 모듈을 핀에 연결해야 합니다.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 파형을 바꿔 들어 보기', code: `from microbit import *
+import audio
+
+WAVES = [
+    (audio.SoundEffect.WAVEFORM_SINE, "SINE", Image.HEART_SMALL),
+    (audio.SoundEffect.WAVEFORM_SAWTOOTH, "SAW", Image.TRIANGLE),
+    (audio.SoundEffect.WAVEFORM_TRIANGLE, "TRI", Image.ARROW_N),
+    (audio.SoundEffect.WAVEFORM_SQUARE, "SQR", Image.SQUARE),
+    (audio.SoundEffect.WAVEFORM_NOISE, "NOISE", Image.CONFUSED),
+]
+
+for wave, name, picture in WAVES:
+    display.show(picture)
+    print(name)
+    audio.play(audio.SoundEffect(freq_start=600, freq_end=600,
+                                 duration=600, waveform=wave))
+    sleep(250)
+
+display.clear()`,
+            desc: '같은 높이(600Hz)인데 <b>파형</b>만 바꿨습니다. 사인파는 부드럽고, 사각파는 딱딱하고, 톱니파는 거칠고, 노이즈는 “쉬~” 하는 소리입니다. 악기와 효과음의 성격이 바로 이 파형에서 나옵니다.',
+            expect: '같은 음이 다섯 가지 음색으로 들립니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 내 교실의 소음 기준 찾기', code: `from microbit import *
+
+samples = []
+display.scroll("QUIET", delay=55)
+
+# ① 조용할 때 10번 재기
+for i in range(10):
+    samples.append(microphone.sound_level())
+    display.show(i)
+    sleep(200)
+
+quiet = sum(samples) // len(samples)
+print("조용할 때 평균:", quiet, " 최대:", max(samples))
+
+display.scroll("LOUD", delay=55)
+samples = []
+
+# ② 시끄러울 때 10번 재기
+for i in range(10):
+    samples.append(microphone.sound_level())
+    display.show(i)
+    sleep(200)
+
+loud = sum(samples) // len(samples)
+print("시끄러울 때 평균:", loud, " 최대:", max(samples))
+print("→ 임계값은", (quiet + loud) // 2, "쯤이 좋겠습니다")
+
+display.scroll(str((quiet + loud) // 2), delay=80)`,
+            hint: '🧭 앞 10번은 <b>🤫 조용히</b>, 뒤 10번은 <b>👏 박수</b> 버튼을 누르며 재 보세요.',
+            desc: '교실마다 소음 수준이 다릅니다. 조용할 때와 시끄러울 때를 각각 재서 <b>그 중간</b>을 임계값으로 잡으면 잘 동작합니다. 센서를 쓰는 프로그램을 만들 때 꼭 거치는 과정입니다.',
+            expect: '조용할 때 평균: 30  최대: 45\n시끄러울 때 평균: 180  최대: 220\n→ 임계값은 105 쯤이 좋겠습니다',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 소리 사건 기록하기', code: `from microbit import *
+
+events = []
+display.show(Image.ASLEEP)
+
+while True:
+    for e in microphone.get_events():          # 그동안 쌓인 사건 전부
+        t = running_time() // 1000
+        events.append((t, e.name))
+        print(t, "초 →", e.name)
+
+    if button_a.was_pressed():
+        loud = [e for e in events if e[1] == "loud"]
+        print("전체", len(events), "건 / 큰 소리", len(loud), "건")
+        display.scroll(str(len(loud)), delay=80)
+        display.show(Image.ASLEEP)
+
+    if button_b.was_pressed():
+        events = []
+        display.show(Image.NO)
+        sleep(400)
+        display.show(Image.ASLEEP)
+
+    sleep(100)`,
+            hint: '🧭 <b>👏 박수</b> 와 <b>🤫 조용히</b> 버튼을 번갈아 눌러 보세요.',
+            desc: '<code>get_events()</code> 는 제스처의 <code>get_gestures()</code> 와 같습니다 — 그동안 일어난 사건을 <b>순서대로 모아</b> 돌려주고 기록을 비웁니다. 언제 시끄러웠는지 시각과 함께 남길 수 있습니다.',
+            expect: '3 초 → loud\n5 초 → quiet',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 듣고 말하는 장치' },
+          { type: 'p', html: '소리를 <b>듣고</b> 또 <b>말하는</b> 프로그램들입니다. V2 전용 기능이 많으니 실제 보드로 해 볼 때는 V2 인지 확인하세요.' },
+          {
+            type: 'code', title: '응용 예제 12-1. 말하는 안내 도우미', code: `from microbit import *
+import speech
+
+ONES = ["zero", "one", "two", "three", "four",
+        "five", "six", "seven", "eight", "nine"]
+TEENS = ["ten", "eleven", "twelve", "thirteen", "fourteen",
+         "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+TENS = ["", "ten", "twenty", "thirty", "forty", "fifty"]
+
+
+def words(n):
+    if n < 10:
+        return ONES[n]
+    if n < 20:
+        return TEENS[n - 10]
+    if n < 60:
+        return TENS[n // 10] + (" " + ONES[n % 10] if n % 10 else "")
+    return "a lot"
+
+
+display.show(Image.ASLEEP)
+
+while True:
+    # A: 온도 말하기
+    if button_a.was_pressed():
+        t = temperature()
+        display.show(Image.HAPPY)
+        speech.say("the temperature is " + words(t) + " degrees")
+        if t > 26:
+            speech.say("it is quite warm", pitch=110, speed=90)
+        elif t < 16:
+            speech.say("it is cold", pitch=30, speed=55)
+        display.show(Image.ASLEEP)
+
+    # B: 켜진 시간 말하기
+    if button_b.was_pressed():
+        m = running_time() // 60000
+        s = running_time() // 1000 % 60
+        display.show(Image.ALL_CLOCKS, delay=40)
+        speech.say("running for " + words(m) + " minutes " + words(s) + " seconds")
+        display.show(Image.ASLEEP)
+
+    # 로고: 밝기 말하기
+    if pin_logo.is_touched():
+        l = display.read_light_level()
+        display.show(Image.SURPRISED)
+        if l > 180:
+            speech.say("it is very bright here")
+        elif l > 60:
+            speech.say("the light is just fine")
+        else:
+            speech.say("it is dark", pitch=140, speed=60)
+        display.show(Image.ASLEEP)
+
+    sleep(50)`,
+            desc: '센서 값을 <b>말로</b> 알려 줍니다. 숫자를 영어 단어로 바꾸는 <code>words()</code> 함수를 만들어 두고 여러 곳에서 재사용했습니다. 눈이 불편한 사람을 위한 보조 기기의 기본 아이디어이기도 합니다.',
+            expect: 'A · B · 로고에 따라 온도 · 시간 · 밝기를 말해 줍니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 12-2. 목소리로 조종하는 점프 게임', code: `from microbit import *
+import audio
+
+JUMP_LEVEL = 110
+GRAVITY = 0.45
+
+y = 4.0              # 세로 위치 (4 = 바닥)
+vy = 0.0
+obstacle = 4         # 장애물 x 위치
+score = 0
+
+display.scroll("SHOUT", delay=55)
+
+while True:
+    # ① 소리를 내면 위로 튀어 오른다
+    if microphone.sound_level() > JUMP_LEVEL and y > 3.5:
+        vy = -1.5
+
+    # ② 중력
+    vy = vy + GRAVITY
+    y = y + vy
+    if y > 4:
+        y, vy = 4.0, 0.0
+    if y < 0:
+        y, vy = 0.0, 0.0
+
+    # ③ 장애물이 왼쪽으로
+    obstacle = obstacle - 1
+    if obstacle < 0:
+        obstacle = 4
+        score = score + 1
+        audio.play(Sound.TWINKLE, wait=False)
+
+    # ④ 그리기
+    display.clear()
+    display.set_pixel(1, int(y + 0.5), 9)          # 나
+    display.set_pixel(obstacle, 4, 6)              # 장애물
+
+    # ⑤ 부딪혔나
+    if obstacle == 1 and int(y + 0.5) == 4:
+        display.show(Image.SAD)
+        audio.play(Sound.SAD)
+        display.scroll(str(score), delay=80)
+        y, vy, obstacle, score = 4.0, 0.0, 4, 0
+        display.scroll("SHOUT", delay=55)
+
+    sleep(200)`,
+            hint: '🧭 장애물이 다가오면 <b>👏 박수</b> 버튼을 눌러 점프하세요.',
+            desc: '소리를 내면 점프하고 중력으로 떨어집니다. 8장의 <b>속도와 중력</b> 계산을 그대로 썼습니다. 실제 보드에서는 “앗!” 하고 소리를 내면 점프합니다.',
+            expect: '소리를 내면 점이 뛰어오르고, 장애물을 피하면 점수가 올라갑니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 12-3. 박수 두 번으로 켜는 스위치', code: `from microbit import *
+import audio
+
+GAP_MS = 700              # 이 시간 안에 두 번 박수
+CLAP_LEVEL = 140
+
+claps = 0
+first_at = 0
+on = False
+
+display.show(Image.NO)
+
+while True:
+    if microphone.sound_level() > CLAP_LEVEL:
+        now = running_time()
+        if claps == 0 or now - first_at > GAP_MS:
+            claps = 1
+            first_at = now
+        else:
+            claps = claps + 1
+
+        if claps >= 2:
+            on = not on
+            claps = 0
+            pin0.write_digital(1 if on else 0)     # 바깥 LED 도 함께
+            display.show(Image.YES if on else Image.NO)
+            audio.play(Sound.HAPPY if on else Sound.YAWN)
+            print("스위치", "켜짐" if on else "꺼짐")
+
+        sleep(220)        # 같은 박수를 두 번 세지 않도록
+
+    # 시간이 지나면 첫 박수는 무효
+    if claps == 1 and running_time() - first_at > GAP_MS:
+        claps = 0
+
+    sleep(25)`,
+            hint: '🧩 LED 를 P0 에 연결하고, 🧭 <b>👏 박수</b> 버튼을 <b>빠르게 두 번</b> 눌러 보세요.',
+            desc: '<b>정해진 시간 안에 두 번</b> 소리가 나야 동작합니다. 한 번만 나면 무시되므로 말소리나 문 닫는 소리에 잘 반응하지 않습니다. 실제 “박수 스위치” 제품이 쓰는 방법입니다.',
+            expect: '박수를 두 번 치면 LED 가 켜지고, 다시 두 번 치면 꺼집니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 12-4. 대답하는 로봇', code: `from microbit import *
+import speech
+import audio
+import random
+
+ANSWERS = [
+    "i think so", "no way", "ask me later",
+    "that sounds good", "i am not sure", "definitely yes",
+]
+
+display.show(Image.ASLEEP)
+mood = 0                     # 0 = 보통, 1 = 기분 좋음, 2 = 졸림
+
+while True:
+    # 큰 소리로 말을 걸면 대답한다
+    if microphone.was_event(SoundEvent.LOUD):
+        display.show(Image.SURPRISED)
+        audio.play(Sound.HELLO)
+        sleep(200)
+
+        answer = random.choice(ANSWERS)
+        if mood == 1:
+            speech.say(answer, pitch=90, speed=95)
+            display.show(Image.HAPPY)
+        elif mood == 2:
+            speech.say(answer, pitch=180, speed=45)
+            display.show(Image.ASLEEP)
+        else:
+            speech.say(answer)
+            display.show(Image.SMILE)
+        print("로봇:", answer)
+        sleep(500)
+        display.show(Image.ASLEEP)
+
+    # A: 기분 바꾸기
+    if button_a.was_pressed():
+        mood = (mood + 1) % 3
+        display.show([Image.SMILE, Image.HAPPY, Image.ASLEEP][mood])
+        audio.play([Sound.HELLO, Sound.GIGGLE, Sound.YAWN][mood])
+        sleep(400)
+        display.show(Image.ASLEEP)
+
+    # 흔들면 싫어한다
+    if accelerometer.was_gesture("shake"):
+        display.show(Image.ANGRY)
+        speech.say("please stop shaking me", pitch=200, speed=110)
+        display.show(Image.ASLEEP)
+
+    sleep(60)`,
+            hint: '🧭 <b>👏 박수</b> 로 말을 걸고, A 로 기분을 바꾸고, <b>흔들기</b> 도 해 보세요.',
+            desc: '<b>듣고(마이크) · 말하고(speech) · 표정(LED) · 효과음(audio)</b> 을 모두 쓴 작은 로봇입니다. 기분에 따라 목소리가 바뀌어 성격이 있는 것처럼 느껴집니다.',
+            expect: '소리를 내면 로봇이 대답하고, 흔들면 싫어합니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 12-5. 기록이 남는 소음 감시기', code: `from microbit import *
+import audio
+import log
+
+THRESHOLD = 130
+WARN_SEC = 3
+INTERVAL = 2000
+
+log.set_labels("level", "warn", timestamp=log.SECONDS)
+
+loud_since = None
+warnings = 0
+next_log = running_time()
+
+display.show(Image.HAPPY)
+
+while True:
+    level = microphone.sound_level()
+    warned_now = 0
+
+    # ① 계속 시끄러운지 확인
+    if level > THRESHOLD:
+        if loud_since is None:
+            loud_since = running_time()
+        elif running_time() - loud_since > WARN_SEC * 1000:
+            warnings = warnings + 1
+            warned_now = 1
+            display.show(Image.ANGRY)
+            audio.play(Sound.SAD)
+            print("경고", warnings, "회 / 소리", level)
+            sleep(900)
+            loud_since = None
+    else:
+        loud_since = None
+
+    # ② 일정 간격으로 기록
+    if running_time() >= next_log:
+        log.add(level=level, warn=warned_now)
+        next_log = next_log + INTERVAL
+
+    # ③ 평소에는 소음 막대
+    if loud_since is None:
+        n = min(5, level // 45)
+        display.clear()
+        for y in range(n):
+            for x in range(5):
+                display.set_pixel(x, 4 - y, 9 if n >= 4 else 5)
+        if n == 0:
+            display.show(Image.HAPPY)
+
+    if button_a.was_pressed():
+        display.scroll(str(warnings), delay=80)
+
+    sleep(120)`,
+            desc: '소음을 <b>실시간으로 보여 주고 동시에 기록</b>합니다. 3초 이상 계속 시끄러우면 경고하고 그 순간도 함께 남깁니다. 수업이 끝난 뒤 <b>📊 로그</b> 탭에서 CSV 를 받아 “언제 시끄러웠나” 를 그래프로 볼 수 있습니다.',
+            expect: '소음 막대가 움직이고, 계속 시끄러우면 경고 후 기록됩니다.',
+            nondeterministic: true
+          },
 
           { type: 'h', text: '2교시 · 12장 요약' },
           {
