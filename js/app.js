@@ -8,6 +8,11 @@
   const $ = (id) => document.getElementById(id);
   const stripTags = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/g, ' ').replace(/\s+/g, ' ').trim();
 
+  /* 교사용 화면 비밀번호.
+   * 정답 · 교사 노트가 학생에게 그냥 보이지 않도록 막는 안전장치일 뿐,
+   * 모든 판단이 브라우저 안에서 이루어지므로 보안 수단은 아닙니다. */
+  const TEACHER_PASS = 'microbit';
+
   const app = {
     role: 'student',
     view: 'doc',
@@ -27,7 +32,10 @@
     const q = new URLSearchParams(location.search);
     app.role = q.get('role') === 'teacher' ? 'teacher' : q.get('role') === 'student' ? 'student' : store.get('mb.role', 'student');
     app.viewPref = q.get('view');
+    const wantTeacher = app.role === 'teacher';
+    if (wantTeacher && !teacherVerified()) app.role = 'student';
     setRole(app.role, true);
+    if (wantTeacher && app.role !== 'teacher') setTimeout(() => requireTeacher(() => setRole('teacher')), 300);
 
     app.sim = new MicrobitSim(app);
     MbEngine.sim = app.sim;
@@ -93,6 +101,43 @@
   }
 
   function setView(view) { app.view = view; render(); }
+  app.setView = setView;
+
+  /* 한 번 확인하면 그 브라우저에서는 다시 묻지 않습니다 */
+  function teacherVerified() { return store.get('mb.teacherOk', '0') === '1'; }
+
+  function requireTeacher(then) {
+    if (teacherVerified()) return then();
+    openModal('🔒 교사용 화면', `
+      <p>교사용 화면에는 <b>퀴즈 · 실습 정답</b>, <b>교사 노트</b>, <b>판서 도구</b>가 들어 있습니다.<br>
+        비밀번호를 입력해 주세요. 한 번 확인하면 이 브라우저에서는 다시 묻지 않습니다.</p>
+      <form id="passForm" style="display:flex;gap:8px;margin-top:12px">
+        <input id="passInput" type="password" autocomplete="current-password" placeholder="비밀번호"
+               style="flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--fg)">
+        <button class="btn primary" type="submit">확인</button>
+      </form>
+      <p id="passMsg" class="muted" style="margin:10px 0 0;font-size:13px">
+        기본 비밀번호는 <code>microbit</code> 입니다. 배포할 때 <code>js/app.js</code> 의 <code>TEACHER_PASS</code> 를 바꿔 주세요.</p>`);
+    setTimeout(() => { const i = $('passInput'); if (i) i.focus(); }, 60);
+    $('passForm').onsubmit = (e) => {
+      e.preventDefault();
+      if ($('passInput').value.trim() === TEACHER_PASS) {
+        store.set('mb.teacherOk', '1');
+        closeModal();
+        then();
+      } else {
+        const m = $('passMsg');
+        m.textContent = '비밀번호가 맞지 않습니다. 다시 입력해 주세요.';
+        m.style.color = 'var(--danger)';
+        $('passInput').select();
+      }
+    };
+  }
+
+  function goRole(role) {
+    if (role === 'teacher') requireTeacher(() => setRole('teacher'));
+    else setRole('student');
+  }
 
   /* ============================================================== 편집기 */
   function setupEditor() {
@@ -704,6 +749,26 @@
   }
   function closeModal() { $('modal').classList.add('hidden'); }
 
+  /* ============================================================== 크게 보기 (라이트박스)
+   * 전체 화면 대상 요소(#deckWrap) 안쪽에 두어 발표 중에도 보이게 합니다.
+   * 보드를 복사하지 않고 그대로 옮겨 오므로 크게 보는 동안에도 계속 움직입니다. */
+  function openLightbox() {
+    const lb = $('lightbox');
+    const inSlides = !$('slideView').classList.contains('hidden');
+    (inSlides ? $('deckWrap') : document.body).appendChild(lb);
+    $('lbTitle').textContent = '📟 micro:bit 보드 크게 보기';
+    $('lbBody').appendChild($('simBoard'));
+    lb.classList.remove('hidden');
+  }
+
+  function closeLightbox() {
+    if (!app.lightboxOpen()) return;
+    $('lightbox').classList.add('hidden');
+    $('output').insertBefore($('simBoard'), $('simTabs'));   // 오른쪽 패널의 원래 자리로
+  }
+  app.lightboxOpen = () => !$('lightbox').classList.contains('hidden');
+  app.closeLightbox = closeLightbox;
+
   function serverModal() {
     const st = {
       idle: '아직 준비 안 함', loading: MbEngine.message || '준비 중…',
@@ -752,7 +817,7 @@
   /* ============================================================== 이벤트 */
   function bindUi() {
     $('themeBtn').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-    document.querySelectorAll('.role-switch button').forEach((b) => b.onclick = () => setRole(b.dataset.role));
+    document.querySelectorAll('.role-switch button').forEach((b) => b.onclick = () => goRole(b.dataset.role));
     document.querySelectorAll('.view-switch button').forEach((b) => b.onclick = () => setView(b.dataset.view));
     $('navSearch').addEventListener('input', () => buildNav());
     $('navTree').addEventListener('click', (e) => {
@@ -796,9 +861,15 @@
     };
     $('serverBtn').onclick = serverModal;
     $('helpBtn').onclick = helpModal;
+    $('zoomSimBtn').onclick = () => (app.lightboxOpen() ? closeLightbox() : openLightbox());
+    $('lbClose').onclick = closeLightbox;
     $('modalClose').onclick = closeModal;
     $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!$('modal').classList.contains('hidden')) { closeModal(); return; }
+      if (app.lightboxOpen()) closeLightbox();     // 크게 보기만 닫고 발표 화면은 그대로 둡니다
+    });
     updateTargetChip();
     app.onRunState('idle');
 
@@ -836,7 +907,7 @@
       const sl = e.target.closest('[data-slides]');
       if (sl) { app.view = 'slides'; go(sl.dataset.slides); if (location.hash === '#' + sl.dataset.slides) render(); return; }
       const rg = e.target.closest('[data-role-go]');
-      if (rg) { setRole(rg.dataset.roleGo); return; }
+      if (rg) { goRole(rg.dataset.roleGo); return; }
       if (e.target.id === 'doneBtn') { toggleDone(app.route.sec.id); render(); }
       if (e.target.id === 'showAllAnswers') {
         app.route.sec.quiz.forEach((q, i) => {

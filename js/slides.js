@@ -2,6 +2,8 @@
 (function () {
   const { esc, highlightInline, fileName, makeEditor } = window.JU;
   const $ = (id) => document.getElementById(id);
+  const SW = 1280, SH = 720;                      // 고정 무대 크기 (16:9)
+  const plain = (h) => String(h || '').replace(/<[^>]+>/g, '').trim();
   const LAYOUT_NAME = { title: '제목', goals: '학습 목표', bullets: '개념', code: '코드', two: '비교', table: '표', diagram: '그림', quiz: '퀴즈', practice: '실습', summary: '정리' };
   const LAYOUT_ICON = { title: '🎬', goals: '🎯', bullets: '📌', code: '💻', two: '⚖️', table: '📊', diagram: '🧭', quiz: '❓', practice: '🛠️', summary: '✅' };
 
@@ -36,8 +38,16 @@
       this.editor = null;
       this.notesOpen = MbRunner.store.get('mb.notesOpen', '1') === '1';
       this.stage = $('stage');
+      this.slideHost = $('stageSlide');
+      this.fitBox = $('stageFit');
       this.wrap = $('deckWrap');
       this.host = $('stageHost');
+      this.bars = $('deckBars');
+      this.scale = 1;
+      this.edgePx = 28;
+      this.press = null;
+      this.ink = new InkLayer($('inkCanvas'));
+      this.ink.onChange = () => this.syncInkBar();
       this.timer = { start: 0, acc: 0 };
       this.channel = 'BroadcastChannel' in window ? new BroadcastChannel('python-presenter') : null;
       this.bind();
@@ -76,7 +86,7 @@
     // ---------------------------------------------------------------- 렌더링
     render() {
       const s = this.slides[this.index];
-      if (!s) { this.stage.innerHTML = ''; return; }
+      if (!s) { this.slideHost.innerHTML = ''; return; }
       const teacher = this.app.role === 'teacher';
       this.editor = null;
       const key = `${this.sec.id}@${this.index}`;
@@ -167,8 +177,8 @@
           html = top + title + `<div class="s-body">${s.html ? JU.scoped(s.html) : bulletsHtml(s.bullets)}</div>` + foot;
       }
 
-      this.stage.innerHTML = `<div class="${cls}">${html}</div>`;
-      const slideEl = this.stage.firstElementChild;
+      this.slideHost.innerHTML = `<div class="${cls}">${html}</div>`;
+      const slideEl = this.slideHost.firstElementChild;
 
       // 코드 편집기
       const edHost = slideEl.querySelector('.s-editor-host');
@@ -189,6 +199,8 @@
       }
 
       slideEl.addEventListener('click', (e) => this.onSlideClick(e, s));
+      this.ink.setSlide(`${this.sec.id}@${this.index}`);
+      if (this.isFull()) this.showConsole(false);   // 슬라이드를 넘기면 결과 창은 닫힌 채로 시작
       this.updateChrome();
       this.renderNotes();
       this.broadcast();
@@ -202,7 +214,7 @@
       if (opt && s.layout === 'quiz') {
         const i = +opt.dataset.opt;
         opt.classList.add(i === s.answer ? 'right' : 'wrong');
-        if (i === s.answer) this.stage.querySelector('.explain').classList.remove('hidden');
+        if (i === s.answer) this.slideHost.querySelector('.explain').classList.remove('hidden');
         return;
       }
       if (!act) return;
@@ -214,15 +226,15 @@
         const cur = +(MbRunner.store.get('mb.slideCodeFont', '0')) || 1.45;
         const next = Math.max(0.9, Math.min(2.6, cur + (a === 'font+' ? 0.15 : -0.15)));
         MbRunner.store.set('mb.slideCodeFont', next.toFixed(2));
-        this.stage.querySelector('.s-editor').style.setProperty('--s-code-font', next.toFixed(2) + 'cqw');
+        this.slideHost.querySelector('.s-editor').style.setProperty('--s-code-font', next.toFixed(2) + 'cqw');
         this.editor && this.editor.refresh();
       } else if (a === 'solution') {
         const key = `${this.sec.id}@${this.index}`;
         this.solutionOn[key] = !this.solutionOn[key];
         this.render();
       } else if (a === 'reveal') {
-        this.stage.querySelectorAll('.opt').forEach((o) => { if (+o.dataset.opt === s.answer) o.classList.add('right'); });
-        this.stage.querySelector('.explain').classList.remove('hidden');
+        this.slideHost.querySelectorAll('.opt').forEach((o) => { if (+o.dataset.opt === s.answer) o.classList.add('right'); });
+        this.slideHost.querySelector('.explain').classList.remove('hidden');
       } else if (a === 'run-col') {
         const c = s[act.dataset.col];
         this.showConsole(true);
@@ -253,11 +265,19 @@
       }
       const flow = (this.sec.flow || []).map((f) => `<div class="row"><span>${esc(f[0])}</span><b>${f[1]}분</b></div>`).join('');
       const nextS = this.slides[this.index + 1];
-      pane.innerHTML = `<div class="n-grid"><div class="n-notes">
-          <h5>🗒 교사 노트 <span class="muted" style="font-weight:500">${LAYOUT_ICON[s.layout] || ''} ${LAYOUT_NAME[s.layout] || ''} · ${this.index + 1}/${this.slides.length}</span></h5>
+      const nextTxt = nextS ? `${LAYOUT_ICON[nextS.layout] || ''} ${plain(nextS.title)}` : '이 교시의 마지막 슬라이드';
+      pane.innerHTML = `<div class="notes-head" title="눌러서 접기 / 펼치기 (N)">
+          <span class="nh-title">🗒 교사용 노트</span>
+          <span class="muted" style="font-size:12px">${LAYOUT_ICON[s.layout] || ''} ${LAYOUT_NAME[s.layout] || ''} · ${this.index + 1}/${this.slides.length}</span>
+          <span class="spacer"></span>
+          <span class="nh-next">다음 ▸ ${esc(nextTxt)}</span>
+          <button class="btn ghost small" data-notes-fold>${this.notesOpen ? '▾ 접기' : '▴ 펼치기'}</button>
+        </div>
+        <div class="notes-body"><div class="n-grid"><div class="n-notes">
           ${s.notes || '<p class="muted">노트 없음</p>'}${answer}</div>
         <div class="n-side"><h5>⏱ 수업 흐름 (${this.sec.minutes || 50}분)</h5>${flow || '<span class="muted">-</span>'}
-          <h5 style="margin-top:12px">다음 슬라이드</h5><div>${nextS ? `${LAYOUT_ICON[nextS.layout] || ''} ${nextS.title}` : '<span class="muted">섹션의 마지막 슬라이드</span>'}</div></div></div>`;
+          <h5 style="margin-top:12px">다음 슬라이드</h5><div>${esc(nextTxt)}</div></div></div></div>`;
+      pane.querySelector('.notes-head').onclick = () => this.toggleNotes();
       const run = $('noteRunSol');
       if (run) run.onclick = () => { this.showConsole(true); this.app.runCode(s.solution, { label: s.title + ' (정답)', stdin: s.stdin }); };
       const show = $('noteShowSol');
@@ -265,10 +285,51 @@
     }
 
     updateChrome() {
-      const txt = `${this.index + 1} / ${this.slides.length}`;
+      const n = this.slides.length;
+      const txt = `${this.index + 1} / ${n}`;
       $('sCount').textContent = txt;
       $('fsCount').textContent = txt;
+      const sl = $('sSlider');
+      sl.max = String(Math.max(1, n));
+      sl.value = String(this.index + 1);
+      const s = this.slides[this.index] || {};
+      const t = plain(s.title);
+      $('sTitle').textContent = t;
+      $('sTitle').title = t;
+      $('sFirst').disabled = this.index === 0;
+      $('deckProgress').style.width = (n > 1 ? (this.index / (n - 1)) * 100 : 100) + '%';
+      this.syncInkBar();
       if (!$('gridOverlay').classList.contains('hidden')) this.renderGrid();
+    }
+
+    /* ---------------------------------------------------------------- 판서 */
+    canDraw() { return this.app.role === 'teacher'; }
+
+    syncInkBar() {
+      const bar = $('inkBar');
+      if (!bar) return;
+      bar.querySelectorAll('[data-ink-tool]').forEach((b) => b.classList.toggle('on', b.dataset.inkTool === this.ink.tool));
+      bar.querySelectorAll('[data-ink-color]').forEach((b) => b.classList.toggle('on', b.dataset.inkColor === this.ink.color));
+      bar.querySelectorAll('[data-ink-width]').forEach((b) => b.classList.toggle('on', +b.dataset.inkWidth === this.ink.width));
+      $('inkUndo').disabled = !this.ink.canUndo();
+      $('inkClear').disabled = !this.ink.hasInk();
+      $('inkClearAll').disabled = !this.ink.hasAnyInk();
+    }
+
+    /** 지우개 · 지시봉 상태에서 색이나 굵기를 고르면 자동으로 펜으로 돌아갑니다 */
+    backToPen() { if (this.ink.tool === 'eraser' || this.ink.tool === 'pointer') this.ink.setTool('pen'); }
+
+    bindInkBar() {
+      $('inkBar').addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        if (b.dataset.inkTool) this.ink.setTool(b.dataset.inkTool);
+        else if (b.dataset.inkColor) { this.ink.setColor(b.dataset.inkColor); this.backToPen(); }
+        else if (b.dataset.inkWidth) { this.ink.setWidth(+b.dataset.inkWidth); this.backToPen(); }
+        else if (b.id === 'inkUndo') this.ink.undoLast();
+        else if (b.id === 'inkClear') this.ink.clearSlide();
+        else if (b.id === 'inkClearAll') this.ink.clearAll();
+      });
     }
 
     // ---------------------------------------------------------------- 이동
@@ -280,6 +341,7 @@
     }
     next() { this.go(this.index + 1); }
     prev() { this.go(this.index - 1); }
+    first() { this.go(0); }
 
     renderGrid() {
       const g = $('gridOverlay');
@@ -299,6 +361,8 @@
       this.notesOpen = !this.notesOpen;
       MbRunner.store.set('mb.notesOpen', this.notesOpen ? '1' : '0');
       $('notesPane').classList.toggle('collapsed', !this.notesOpen);
+      const b = $('notesPane').querySelector('[data-notes-fold]');
+      if (b) b.textContent = this.notesOpen ? '▾ 접기' : '▴ 펼치기';
       this.fit();
     }
 
@@ -312,6 +376,7 @@
         this.onFullChange();
         return;
       }
+      this.fsConsole = false;              // 발표를 시작할 때 결과 창은 닫힌 상태
       try {
         if (!this.wrap.requestFullscreen) throw new Error('unsupported');
         await this.wrap.requestFullscreen();
@@ -328,10 +393,14 @@
       const full = document.fullscreenElement === this.wrap || this.wrap.classList.contains('pfull');
       this.wrap.classList.toggle('is-full', full);
       if (full) {
+        // 전체 화면에서는 대상 요소 안쪽만 보이므로 상단 메뉴와 결과 창을 안으로 옮깁니다
+        this.wrap.insertBefore(this.bars, this.wrap.firstChild);
         slot.appendChild(panel);
         slot.classList.toggle('off', !this.fsConsole);
       } else {
+        $('slideView').insertBefore(this.bars, $('slideView').firstChild);
         $('output').appendChild(panel);
+        this.wrap.classList.remove('bar-peek', 'idle');
       }
       this.fit();
       setTimeout(() => this.fit(), 120);
@@ -343,17 +412,93 @@
       this.fit();
     }
 
+    /** 1280 x 720 고정 무대를 화면 크기에 맞춰 축소·확대한다 */
     fit() {
       const host = this.host;
       const cs = getComputedStyle(host);
       const w = host.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const h = host.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
       if (w <= 0 || h <= 0) return;
-      const width = Math.floor(Math.min(w, h * 16 / 9));
-      if (this.stage.style.width !== width + 'px') {
-        this.stage.style.width = width + 'px';
-        if (this.editor) requestAnimationFrame(() => this.editor && this.editor.refresh());
+      const k = Math.min(w / SW, h / SH);
+      this.scale = k;
+      this.fitBox.style.width = Math.floor(SW * k) + 'px';
+      this.fitBox.style.height = Math.floor(SH * k) + 'px';
+      this.stage.style.transform = `scale(${k})`;
+      this.edgePx = Math.max(28, SW * k * 0.06);
+      this.wrap.querySelectorAll('.edge-band').forEach((b) => { b.style.width = this.edgePx + 'px'; });
+    }
+
+    /* ---------------------------------------------------------------- 슬라이드 위 조작 */
+    /** 버튼 · 링크 · 퀴즈 보기 · 편집기 위에서는 슬라이드 조작을 하지 않습니다 */
+    isInteractive(t) {
+      return !!(t && t.closest && t.closest('button, a, input, select, textarea, label, .CodeMirror, .opt, [data-act], [data-opt]'));
+    }
+
+    /** 화면 좌표 → 슬라이드 좌표(1280 x 720) */
+    toSlide(e) {
+      const r = this.fitBox.getBoundingClientRect();
+      return { x: (e.clientX - r.left) / this.scale, y: (e.clientY - r.top) / this.scale };
+    }
+
+    /** 가장자리 구간(슬라이드 너비의 6%, 최소 28px) 판정 */
+    zoneOf(e) {
+      const r = this.fitBox.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      if (x < this.edgePx) return 'prev';
+      if (x > r.width - this.edgePx) return 'next';
+      return 'mid';
+    }
+
+    setCursor(zone, inter) {
+      const st = this.stage;
+      st.classList.remove('cur-prev', 'cur-next', 'cur-point', 'cur-marker', 'cur-eraser');
+      this.wrap.querySelectorAll('.edge-band').forEach((b) => b.classList.remove('hot'));
+      if (inter || zone === 'off') return;
+      if (zone === 'prev' || zone === 'next') {
+        st.classList.add('cur-' + zone);
+        const band = this.wrap.querySelector('.edge-band.' + zone);
+        if (band) band.classList.add('hot');
+        return;
       }
+      const tool = this.canDraw() ? this.ink.tool : 'pointer';
+      st.classList.add(tool === 'marker' ? 'cur-marker' : tool === 'eraser' ? 'cur-eraser' : 'cur-point');
+    }
+
+    bindStage() {
+      const st = this.stage;
+      st.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || this.isInteractive(e.target)) return;
+        const zone = this.zoneOf(e);
+        this.press = { zone, x: e.clientX, y: e.clientY, moved: false, drawing: false };
+        if (zone === 'mid' && this.canDraw() && this.ink.begin(this.toSlide(e).x, this.toSlide(e).y)) {
+          this.press.drawing = true;
+          try { st.setPointerCapture(e.pointerId); } catch (err) { /* 무시 */ }
+          e.preventDefault();
+        }
+      });
+
+      st.addEventListener('pointermove', (e) => {
+        const pr = this.press;
+        if (pr && pr.drawing) { const p = this.toSlide(e); this.ink.move(p.x, p.y); return; }
+        if (pr) {
+          if (Math.hypot(e.clientX - pr.x, e.clientY - pr.y) > 4) pr.moved = true;
+          return;                                    // 누르고 있는 동안에는 커서를 바꾸지 않습니다
+        }
+        this.setCursor(this.zoneOf(e), this.isInteractive(e.target));
+      });
+
+      const release = (e) => {
+        const pr = this.press;
+        this.press = null;
+        if (!pr) return;
+        if (pr.drawing) { this.ink.end(); return; }   // 그리기를 끝낸 클릭으로는 쪽을 넘기지 않습니다
+        if (pr.moved) return;
+        if (pr.zone === 'prev') this.prev();
+        else if (pr.zone === 'next') this.next();
+      };
+      st.addEventListener('pointerup', release);
+      st.addEventListener('pointercancel', () => { if (this.press && this.press.drawing) this.ink.end(); this.press = null; });
+      st.addEventListener('pointerleave', () => { if (!this.press) this.setCursor('off', false); });
     }
 
     blackout(force) {
@@ -374,7 +519,7 @@
       $('timerText').textContent = `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
       $('timerBox').classList.toggle('running', !!this.timer.start);
       $('timerBox').classList.toggle('over', this.sec && m >= (this.sec.minutes || 50));
-      $('timerBtn').textContent = this.timer.start ? '⏸' : '▶';
+      $('timerIcon').textContent = this.timer.start ? '⏸' : '⏱';
     }
 
     // ---------------------------------------------------------------- 발표자 창
@@ -392,15 +537,19 @@
 
     // ---------------------------------------------------------------- 이벤트
     bind() {
+      $('sFirst').onclick = () => this.first();
       $('sPrev').onclick = () => this.prev();
       $('sNext').onclick = () => this.next();
+      $('sSlider').addEventListener('input', (e) => { const i = (+e.target.value || 1) - 1; if (i !== this.index) this.go(i); });
       $('sGrid').onclick = () => this.toggleGrid();
-      $('sNotes').onclick = () => this.toggleNotes();
+      $('sDoc').onclick = () => this.app.setView('doc');
       $('sFull').onclick = () => this.toggleFull();
       $('sPresenter').onclick = () => { window.open('presenter.html', 'python-presenter', 'width=1100,height=720'); setTimeout(() => this.broadcast(), 800); };
       $('timerBtn').onclick = () => this.timerToggle();
       $('timerReset').onclick = () => this.timerReset();
       $('consoleHideBtn').onclick = () => this.showConsole(false);
+      this.bindInkBar();
+      this.bindStage();
       setInterval(() => this.timerDraw(), 500);
 
       $('gridOverlay').addEventListener('click', (e) => {
@@ -423,9 +572,10 @@
       new ResizeObserver(() => this.fit()).observe(this.host);
 
       let idleT = 0;
-      this.wrap.addEventListener('mousemove', () => {
+      this.wrap.addEventListener('mousemove', (e) => {
         this.wrap.classList.remove('idle');
         clearTimeout(idleT);
+        if (this.isFull()) this.wrap.classList.toggle('bar-peek', e.clientY - this.wrap.getBoundingClientRect().top < 56);
         idleT = setTimeout(() => { if (this.isFull()) this.wrap.classList.add('idle'); }, 2500);
       });
 
@@ -438,19 +588,25 @@
           if (e.key === 'Escape' && t.closest('.CodeMirror')) t.blur ? document.activeElement.blur() : 0;
           return;
         }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {   // 판서 되돌리기
+          if (this.canDraw()) { e.preventDefault(); this.ink.undoLast(); }
+          return;
+        }
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const k = e.key;
         if (['ArrowRight', 'PageDown', ' '].includes(k)) { e.preventDefault(); this.next(); }
         else if (['ArrowLeft', 'PageUp'].includes(k)) { e.preventDefault(); this.prev(); }
-        else if (k === 'Home') { e.preventDefault(); this.go(0); }
         else if (k === 'End') { e.preventDefault(); this.go(this.slides.length - 1); }
         else if (k === 'f' || k === 'F') { e.preventDefault(); this.toggleFull(); }
         else if (k === 'g' || k === 'G') { e.preventDefault(); this.toggleGrid(); }
         else if (k === 'r' || k === 'R') { e.preventDefault(); if (this.isFull()) this.showConsole(!this.fsConsole); }
         else if ((k === 'n' || k === 'N') && this.app.role === 'teacher') { e.preventDefault(); this.toggleNotes(); }
+        else if (k === 'Home') { e.preventDefault(); this.first(); }
         else if (k === 'b' || k === 'B' || k === '.') { e.preventDefault(); this.blackout(); }
         else if ((k === 't' || k === 'T') && this.app.role === 'teacher') { e.preventDefault(); this.timerToggle(); }
         else if (k === 'Escape') {
+          // 크게 보기가 열려 있으면 그것만 닫고 발표 화면은 그대로 둡니다
+          if (this.app.lightboxOpen()) { e.preventDefault(); this.app.closeLightbox(); return; }
           if ($('gridOverlay').classList.contains('hidden') && this.wrap.classList.contains('pfull')) this.toggleFull();
           this.toggleGrid(false); this.blackout(false);
         }

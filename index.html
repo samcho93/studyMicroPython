@@ -93,25 +93,70 @@
 
       <!-- 슬라이드 보기 -->
       <div id="slideView" class="slide-view hidden">
+        <div id="deckBars" class="deck-bars">
+        <!-- 첫째 줄: 이동과 보기 -->
         <div class="deck-bar">
-          <button id="sPrev" class="btn ghost small" title="이전 슬라이드 (←)">◀</button>
+          <button id="sFirst" class="btn ghost small" title="첫 슬라이드로 (Home)">⏮<span class="lbl">처음</span></button>
+          <button id="sPrev" class="btn ghost small" title="이전 슬라이드 (← , PageUp)">◀</button>
           <span id="sCount" class="s-count">1 / 1</span>
-          <button id="sNext" class="btn ghost small" title="다음 슬라이드 (→)">▶</button>
-          <button id="sGrid" class="btn ghost small" title="슬라이드 목록 (G)">▦ 목록</button>
+          <button id="sNext" class="btn ghost small" title="다음 슬라이드 (→ , Space, PageDown)">▶</button>
+          <input id="sSlider" class="s-slider" type="range" min="1" max="1" value="1" step="1"
+                 title="끌어서 원하는 쪽으로 바로 이동" aria-label="슬라이드 쪽 이동">
+          <span id="sTitle" class="s-slide-title"></span>
           <span class="spacer"></span>
-          <span class="teacher-only timer" id="timerBox" title="수업 타이머 (T: 시작/정지)">
-            <span id="timerText">00:00</span>
-            <button id="timerBtn" class="icon-btn small" title="시작/정지">▶</button>
-            <button id="timerReset" class="icon-btn small" title="초기화">↺</button>
+          <span class="teacher-only timer" id="timerBox">
+            <button id="timerBtn" class="timer-main" title="수업 타이머 — 눌러서 시작 / 일시정지 (T)"><span id="timerIcon">⏱</span> <span id="timerText">00:00</span></button>
+            <button id="timerReset" class="icon-btn small" title="타이머 초기화">↺</button>
           </span>
-          <button id="sNotes" class="btn ghost small teacher-only" title="교사 노트 (N)">🗒 노트</button>
-          <button id="sPresenter" class="btn ghost small teacher-only" title="발표자 창 열기">🖥 발표자 창</button>
-          <button id="sFull" class="btn primary small" title="전체 화면 (F)">⛶ 전체 화면</button>
+          <button id="sPresenter" class="btn ghost small teacher-only" title="노트 · 다음 슬라이드 · 타이머가 보이는 별도 창을 다른 모니터에 띄웁니다">🗒<span class="lbl">발표자 창</span></button>
+          <button id="sGrid" class="btn ghost small" title="전체 슬라이드 목록 (G)">▦<span class="lbl">목록</span></button>
+          <button id="sDoc" class="btn ghost small" title="스크롤 문서 보기로 전환">📄<span class="lbl">문서</span></button>
+          <button id="sFull" class="btn primary small" title="전체 화면 발표 (F)">⛶<span class="lbl">전체 화면</span></button>
+          <div class="deck-progress"><i id="deckProgress"></i></div>
         </div>
+
+        <!-- 둘째 줄: 판서 도구 (교사용 전용) -->
+        <div id="inkBar" class="ink-bar teacher-only">
+          <span class="ink-label">✏️<span class="lbl">판서</span></span>
+          <span class="ink-group" role="group" aria-label="판서 도구">
+            <button class="ink-btn" data-ink-tool="pen" title="펜 — 슬라이드 가운데를 끌어서 그립니다">🖊<span class="lbl">펜</span></button>
+            <button class="ink-btn" data-ink-tool="marker" title="형광펜 — 반투명하고 굵게 칠합니다">🖍<span class="lbl">형광펜</span></button>
+            <button class="ink-btn" data-ink-tool="eraser" title="지우개 — 스친 획을 통째로 지웁니다">🧽<span class="lbl">지우개</span></button>
+            <button class="ink-btn" data-ink-tool="pointer" title="지시봉 — 그리지 않고 가리키기만 합니다">👆<span class="lbl">지시봉</span></button>
+          </span>
+          <span class="ink-sep"></span>
+          <span class="ink-group" role="group" aria-label="판서 색">
+            <button class="ink-color" data-ink-color="#e53935" style="--c:#e53935" title="빨강"></button>
+            <button class="ink-color" data-ink-color="#1e63e9" style="--c:#1e63e9" title="파랑"></button>
+            <button class="ink-color" data-ink-color="#1b9e4b" style="--c:#1b9e4b" title="초록"></button>
+            <button class="ink-color" data-ink-color="#ffc400" style="--c:#ffc400" title="노랑"></button>
+            <button class="ink-color" data-ink-color="#111111" style="--c:#111111" title="검정"></button>
+            <button class="ink-color" data-ink-color="#ffffff" style="--c:#ffffff" title="흰색"></button>
+          </span>
+          <span class="ink-sep"></span>
+          <span class="ink-group" role="group" aria-label="판서 굵기">
+            <button class="ink-width" data-ink-width="3" title="가늘게"><i style="--d:5px"></i></button>
+            <button class="ink-width" data-ink-width="6" title="보통"><i style="--d:9px"></i></button>
+            <button class="ink-width" data-ink-width="12" title="굵게"><i style="--d:14px"></i></button>
+          </span>
+          <span class="ink-sep"></span>
+          <button id="inkUndo" class="ink-btn" title="마지막 획 되돌리기 (Ctrl+Z)">↶<span class="lbl">되돌리기</span></button>
+          <button id="inkClear" class="ink-btn" title="이 슬라이드의 판서를 지웁니다">🗑<span class="lbl">이 장 지우기</span></button>
+          <button id="inkClearAll" class="ink-btn" title="현재 강의의 판서를 모두 지웁니다">🗑<span class="lbl">모두</span></button>
+        </div>
+        </div>
+
         <div id="deckWrap" class="deck-wrap">
           <div id="stageHost" class="stage-host">
-            <div id="stage" class="stage"></div>
-            <div id="blackout" class="blackout hidden"></div>
+            <div id="stageFit" class="stage-fit">
+              <div id="stage" class="stage">
+                <div id="stageSlide" class="stage-slide"></div>
+                <canvas id="inkCanvas" class="ink-canvas" width="2560" height="1440"></canvas>
+              </div>
+              <div class="edge-band prev" data-edge="prev"><span>‹</span></div>
+              <div class="edge-band next" data-edge="next"><span>›</span></div>
+              <div id="blackout" class="blackout hidden"></div>
+            </div>
           </div>
           <div id="fsConsoleSlot" class="fs-console-slot"></div>
           <div class="fs-controls">
@@ -119,11 +164,15 @@
             <span id="fsCount">1 / 1</span>
             <button data-fs="next" title="다음 (→)">▶</button>
             <button data-fs="grid" title="목록 (G)">▦</button>
-            <button data-fs="console" title="시뮬레이터 패널 (R)">▣ 결과</button>
+            <button data-fs="console" title="결과 창 (R)">▣ 결과</button>
             <button data-fs="black" title="화면 가리기 (B)">◼</button>
             <button data-fs="exit" title="전체 화면 종료 (Esc)">✕</button>
           </div>
           <div id="gridOverlay" class="grid-overlay hidden"></div>
+          <div id="lightbox" class="lightbox hidden">
+            <div class="lb-head"><b id="lbTitle">크게 보기</b><span class="spacer"></span><button id="lbClose" class="btn small ghost" title="닫기 (Esc)">✕ 닫기</button></div>
+            <div id="lbBody" class="lb-body"></div>
+          </div>
         </div>
         <div id="notesPane" class="notes-pane teacher-only"></div>
       </div>
@@ -139,6 +188,7 @@
         <button id="runSimBtn" class="btn small primary" title="편집기의 코드를 실행 (Ctrl+Enter)">▶</button>
         <button id="stopSimBtn" class="btn small danger" title="정지 (Ctrl+C)">■</button>
         <button id="resetSimBtn" class="btn small ghost" title="보드 리셋 (화면 · 핀 초기화)">↺</button>
+        <button id="zoomSimBtn" class="btn small ghost" title="보드를 크게 보기 (발표 중에도 열립니다)">⤢ 크게 보기</button>
         <button id="connectBtn" class="btn small ghost" title="실제 micro:bit 를 USB 로 연결 (Chrome · Edge)">🔌 보드</button>
       </div>
       <div id="simBoard" class="sim-board"></div>
@@ -205,6 +255,7 @@
   <script src="js/serial.js"></script>
   <script src="js/simview.js"></script>
   <script src="js/console.js"></script>
+  <script src="js/ink.js"></script>
   <script src="js/slides.js"></script>
   <script src="js/app.js"></script>
 </body>
