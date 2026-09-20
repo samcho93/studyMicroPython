@@ -23,9 +23,11 @@
 .mb-svg { width: 100%; max-height: 290px; display: block; }
 .mb-body { fill: #0e6b64; stroke: #0a4f4a; stroke-width: 2; }
 :root[data-theme="dark"] .mb-body { fill: #0c5a55; stroke: #073f3b; }
+/* 꺼진 LED → 켜진 LED 순서로 두어야 합니다. 특정도가 같으므로 나중에 쓴 규칙이 이깁니다. */
 .mb-screen rect.mb-led { fill: #3a1512; transition: opacity .06s linear; }
-.mb-screen rect.mb-led.on { fill: #ff2d1a; filter: url(#mbGlow); }
 .mb-screen.active rect.mb-led { fill: #451915; }
+.mb-screen rect.mb-led.on,
+.mb-screen.active rect.mb-led.on { fill: #ff2d1a; filter: url(#mbGlow); }
 
 .mb-btn rect { fill: #101418; stroke: #000; stroke-width: 1.5; }
 .mb-btn circle { fill: #2b3138; }
