@@ -81,7 +81,7 @@
       this.editor = null;
       const key = `${this.sec.id}@${this.index}`;
       const top = `<div class="s-top"><span class="s-ch">Chapter ${esc(this.ch.no)}</span><span>${esc(this.ch.title)}</span><span class="spacer"></span><span>${esc(this.sec.title)}</span></div>`;
-      const foot = `<div class="s-foot"><span>🐍 파이썬 프로그래밍</span><span class="spacer"></span><span class="pg">${this.index + 1} / ${this.slides.length}</span></div>`;
+      const foot = `<div class="s-foot"><span>📟 마이크로비트 MicroPython</span><span class="spacer"></span><span class="pg">${this.index + 1} / ${this.slides.length}</span></div>`;
       const title = `<h2 class="s-title">${s.title || ''}</h2>`;
       const lead = s.lead ? `<p class="s-lead">${s.lead}</p>` : '';
       let html = '';
