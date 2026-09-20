@@ -3,39 +3,23 @@
  */
 (function () {
   /* ───────────── 공용 그림 ───────────── */
-  const FIG_BOARD = `<svg viewBox="0 0 1280 620" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  const BX = 420, BY = 24;                       // 본문 그림 안에서 보드를 놓을 위치
+  const P = (x, y) => [x + BX, y + BY];          // 보드 좌표 → 그림 좌표
+
+  const FIG_BOARD = `<svg viewBox="0 0 1280 470" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
   <defs><marker id="c1a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>
-  <rect x="330" y="90" width="620" height="380" rx="34" fill="#0e6b64" stroke="#0a4f4a" stroke-width="4"/>
-  <!-- 로고 -->
-  <circle cx="612" cy="146" r="14" fill="#d4a017"/><circle cx="668" cy="146" r="14" fill="#d4a017"/>
-  <rect x="598" y="160" width="84" height="14" rx="7" fill="#d4a017" opacity=".5"/>
-  <!-- LED -->
-  ${Array.from({ length: 25 }, (_, i) => `<rect x="${556 + (i % 5) * 34}" y="${218 + Math.floor(i / 5) * 30}" width="13" height="20" rx="3" fill="${[0, 2, 6, 8, 12, 16, 18, 22, 24].includes(i) ? '#ff2d1a' : '#4a1a16'}"/>`).join('')}
-  <!-- 버튼 -->
-  <rect x="404" y="252" width="64" height="64" rx="10" fill="#101418"/><circle cx="436" cy="284" r="17" fill="#2b3138"/>
-  <text x="436" y="342" text-anchor="middle" font-size="24" font-weight="bold" fill="#cfe9e6">A</text>
-  <rect x="812" y="252" width="64" height="64" rx="10" fill="#101418"/><circle cx="844" cy="284" r="17" fill="#2b3138"/>
-  <text x="844" y="342" text-anchor="middle" font-size="24" font-weight="bold" fill="#cfe9e6">B</text>
-  <!-- 엣지 커넥터 -->
-  ${[0, 1, 2, 3, 4].map((i) => `<rect x="${360 + i * 140}" y="440" width="34" height="58" rx="3" fill="#e0b526"/>`).join('')}
-  ${Array.from({ length: 16 }, (_, i) => `<rect x="${406 + i * 34}" y="440" width="9" height="34" rx="2" fill="#c9a227"/>`).join('')}
-  <text x="377" y="478" text-anchor="middle" font-size="18" font-weight="bold" fill="#2b2205">0</text>
-  <text x="517" y="478" text-anchor="middle" font-size="18" font-weight="bold" fill="#2b2205">1</text>
-  <text x="657" y="478" text-anchor="middle" font-size="18" font-weight="bold" fill="#2b2205">2</text>
-  <text x="797" y="478" text-anchor="middle" font-size="16" font-weight="bold" fill="#2b2205">3V</text>
-  <text x="937" y="478" text-anchor="middle" font-size="16" font-weight="bold" fill="#2b2205">G</text>
-  <!-- 설명선 -->
+  ${MB_FIG.board({ x: BX, y: BY, leds: '0101000000001000000010101' })}
   ${[
-      [640, 130, 640, 60, '터치 로고 (V2)', 'middle'],
-      [640, 250, 1130, 200, 'LED 화면 5 × 5', 'start'],
-      [436, 284, 150, 240, '버튼 A', 'end'],
-      [844, 284, 1130, 300, '버튼 B', 'start'],
-      [640, 466, 640, 560, '엣지 커넥터 (핀)', 'middle'],
-      [420, 420, 150, 400, '스피커 · 마이크 (V2)', 'end'],
-      [880, 400, 1130, 420, '가속도 · 나침반 센서', 'start']
-    ].map(([x1, y1, x2, y2, label, anchor]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#c1a)" stroke-dasharray="6 5"/>
-  <text x="${x2 + (anchor === 'start' ? 10 : anchor === 'end' ? -10 : 0)}" y="${y2 + (anchor === 'middle' ? (y2 > y1 ? 26 : -10) : 6)}" text-anchor="${anchor}" font-size="22" font-weight="bold" fill="var(--fg)">${label}</text>`).join('\n  ')}
-  <circle cx="420" cy="420" r="13" fill="#11171c"/><circle cx="880" cy="400" r="13" fill="#11171c"/>
+      [P(230, 62), [650, 28], '터치 로고 (V2)', 'middle'],
+      [P(400, 54), [1010, 52], '마이크 (V2)', 'start'],
+      [P(304, 190), [1010, 136], 'LED 화면 5 × 5', 'start'],
+      [P(383, 199), [1010, 222], '버튼 B', 'start'],
+      [P(330, 250), [1010, 306], '가속도 · 나침반 센서', 'start'],
+      [P(77, 199), [272, 180], '버튼 A', 'end'],
+      [P(56, 256), [272, 288], '스피커 (V2)', 'end'],
+      [P(230, 380), [650, 432], '엣지 커넥터 (핀 25개)', 'middle']
+    ].map(([[x1, y1], [x2, y2], label, anchor]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--muted)" stroke-width="2.5" marker-end="url(#c1a)" stroke-dasharray="6 5"/>
+  <text x="${x2 + (anchor === 'start' ? 12 : anchor === 'end' ? -12 : 0)}" y="${y2 + (anchor === 'middle' ? (y2 > y1 ? 26 : -10) : 7)}" text-anchor="${anchor}" font-size="22" font-weight="bold" fill="var(--fg)">${label}</text>`).join('\n  ')}
 </svg>`;
 
   const FIG_FLOW = `<svg viewBox="0 0 1280 330" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
@@ -69,9 +53,8 @@
   <rect x="880" y="30" width="370" height="250" rx="14" fill="var(--card)" stroke="var(--more)" stroke-width="4"/>
   <rect x="880" y="30" width="370" height="48" rx="14" fill="var(--more)" opacity=".16"/>
   <text x="905" y="63" font-size="22" font-weight="bold" fill="var(--more)">④ 오른쪽 위 · 시뮬레이터</text>
-  <rect x="960" y="100" width="210" height="130" rx="14" fill="#0e6b64"/>
-  ${Array.from({ length: 25 }, (_, i) => `<rect x="${1000 + (i % 5) * 26}" y="${120 + Math.floor(i / 5) * 20}" width="9" height="13" rx="2" fill="${[6, 8, 16, 17, 18].includes(i) ? '#ff2d1a' : '#4a1a16'}"/>`).join('')}
-  <text x="1065" y="262" text-anchor="middle" font-size="19" fill="var(--muted)">LED · 버튼 · 센서 · 핀</text>
+  ${MB_FIG.board({ x: 963, y: 82, scale: 0.44, labels: false, btnLabel: false, ics: false, leds: '0000000000001000110001000' })}
+  <text x="1065" y="266" text-anchor="middle" font-size="19" fill="var(--muted)">LED · 버튼 · 센서 · 핀</text>
   <rect x="880" y="292" width="370" height="98" rx="14" fill="#0f1419" stroke="var(--line)" stroke-width="3"/>
   <text x="905" y="322" font-size="20" font-weight="bold" fill="#4cc983">⑤ 오른쪽 아래 · 콘솔 + 파이썬 셸</text>
   <text x="905" y="356" font-size="18" font-family="monospace" fill="#d7dde8">Hello!</text>

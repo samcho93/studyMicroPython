@@ -2,28 +2,33 @@
  * 원본: MicroPython on the BBC micro:bit — Network / Radio
  */
 (function () {
-  const FIG_WIRE = `<svg viewBox="0 0 1280 380" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
-  <text x="640" y="34" text-anchor="middle" font-size="25" font-weight="bold" fill="var(--fg)">선으로 연결하기 — 두 보드의 GND 를 반드시 잇는다</text>
-  <rect x="120" y="110" width="330" height="170" rx="20" fill="#0e6b64"/>
-  <text x="285" y="205" text-anchor="middle" font-size="22" fill="#9fd8d3">micro:bit A</text>
-  <rect x="830" y="110" width="330" height="170" rx="20" fill="#0e6b64"/>
-  <text x="995" y="205" text-anchor="middle" font-size="22" fill="#9fd8d3">micro:bit B</text>
-  ${[['P1', 150, 'var(--accent)', '신호선'], ['GND', 240, 'var(--danger)', '공통 접지 (필수!)']]
-      .map(([label, y, color, note]) => `<rect x="430" y="${y - 12}" width="34" height="24" rx="3" fill="#e0b526"/>
-  <rect x="816" y="${y - 12}" width="34" height="24" rx="3" fill="#e0b526"/>
-  <text x="400" y="${y + 7}" text-anchor="end" font-size="18" font-weight="bold" fill="${color}">${label}</text>
-  <text x="880" y="${y + 7}" font-size="18" font-weight="bold" fill="${color}">${label}</text>
-  <line x1="464" y1="${y}" x2="816" y2="${y}" stroke="${color}" stroke-width="5"/>
-  <text x="640" y="${y - 18}" text-anchor="middle" font-size="17" fill="${color}">${note}</text>`).join('\n  ')}
-  <rect x="120" y="310" width="1040" height="52" rx="10" fill="var(--danger)" opacity=".13" stroke="var(--danger)" stroke-width="2"/>
-  <text x="640" y="343" text-anchor="middle" font-size="19" fill="var(--fg)">⚠ <tspan font-weight="bold">GND 를 연결하지 않으면</tspan> 두 보드가 “0V 가 어디인지” 를 몰라 신호를 읽을 수 없습니다</text>
+  /* 두 보드를 0.5 배로 놓고, 실제 패드 위치에서 전선을 뽑는다 */
+  const WS = 0.5, WY = 70, AX = 70, BX = 870;
+  const wireX = (bx, pad) => bx + MB_FIG.ANCHOR.pad(pad)[0] * WS;
+  const wireY = WY + MB_FIG.BOT * WS;
+
+  const FIG_WIRE = `<svg viewBox="0 0 1280 470" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <text x="640" y="30" text-anchor="middle" font-size="25" font-weight="bold" fill="var(--fg)">선으로 연결하기 — 두 보드의 GND 를 반드시 잇는다</text>
+  ${MB_FIG.board({ x: AX, y: WY, scale: WS, btnLabel: false, ics: false, leds: '0000001110011100111000000' })}
+  ${MB_FIG.board({ x: BX, y: WY, scale: WS, btnLabel: false, ics: false, leds: '0000000000001000000000000' })}
+  <text x="${AX + 230 * WS}" y="${WY - 8}" text-anchor="middle" font-size="22" font-weight="bold" fill="var(--fg)">micro:bit A (보내는 쪽)</text>
+  <text x="${BX + 230 * WS}" y="${WY - 8}" text-anchor="middle" font-size="22" font-weight="bold" fill="var(--fg)">micro:bit B (받는 쪽)</text>
+  ${[['1', 312, 'var(--accent)', '신호선 — P1 ↔ P1'], ['GND', 380, 'var(--danger)', '공통 접지 GND ↔ GND (필수!)']]
+      .map(([pad, drop, color, note]) => {
+        const x1 = wireX(AX, pad), x2 = wireX(BX, pad);
+        return `<path d="M${x1.toFixed(1)} ${wireY} L${x1.toFixed(1)} ${drop} L${x2.toFixed(1)} ${drop} L${x2.toFixed(1)} ${wireY}" fill="none" stroke="${color}" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="${x1.toFixed(1)}" cy="${wireY}" r="6" fill="${color}"/><circle cx="${x2.toFixed(1)}" cy="${wireY}" r="6" fill="${color}"/>
+  <text x="640" y="${drop - 12}" text-anchor="middle" font-size="19" font-weight="bold" fill="${color}">${note}</text>`;
+      }).join('\n  ')}
+  <rect x="120" y="398" width="1040" height="52" rx="10" fill="var(--danger)" opacity=".13" stroke="var(--danger)" stroke-width="2"/>
+  <text x="640" y="431" text-anchor="middle" font-size="19" fill="var(--fg)">⚠ <tspan font-weight="bold">GND 를 연결하지 않으면</tspan> 두 보드가 “0V 가 어디인지” 를 몰라 신호를 읽을 수 없습니다</text>
 </svg>`;
 
   const FIG_RADIO = `<svg viewBox="0 0 1280 400" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
   <text x="640" y="34" text-anchor="middle" font-size="25" font-weight="bold" fill="var(--fg)">radio — 선 없이 여러 대가 동시에</text>
   ${[[300, 150, 'A'], [640, 110, 'B'], [980, 150, 'C'], [470, 290, 'D'], [810, 290, 'E']]
-      .map(([x, y, name]) => `<rect x="${x - 55}" y="${y - 38}" width="110" height="76" rx="12" fill="#0e6b64"/>
-  <text x="${x}" y="${y + 8}" text-anchor="middle" font-size="26" font-weight="bold" fill="#9fd8d3">${name}</text>`).join('\n  ')}
+      .map(([x, y, name]) => MB_FIG.board({ x: x - 0.26 * 230, y: y - 0.26 * 188, scale: 0.26, labels: false, btnLabel: false, ics: false, leds: '0000000000001000000000000' }) +
+        `<text x="${x}" y="${y + 74}" text-anchor="middle" font-size="24" font-weight="bold" fill="var(--fg)">${name}</text>`).join('\n  ')}
   ${[[300, 150], [640, 110], [980, 150], [470, 290], [810, 290]]
       .map(([x, y]) => [1, 2, 3].map((r) => `<circle cx="${x}" cy="${y}" r="${45 + r * 26}" fill="none" stroke="var(--accent)" stroke-width="1.6" opacity="${0.4 - r * 0.1}"/>`).join('')).join('\n  ')}
   <rect x="440" y="180" width="400" height="66" rx="14" fill="var(--card)" stroke="var(--accent)" stroke-width="3"/>

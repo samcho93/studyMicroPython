@@ -2,38 +2,38 @@
  * 원본: MicroPython on the BBC micro:bit — Input/Output Pins
  */
 (function () {
-  const FIG_EDGE = `<svg viewBox="0 0 1280 480" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
-  <text x="640" y="36" text-anchor="middle" font-size="26" font-weight="bold" fill="var(--fg)">엣지 커넥터 — micro:bit 가 바깥 세상과 만나는 곳</text>
-  <rect x="120" y="70" width="1040" height="130" rx="16" fill="#0e6b64"/>
-  <text x="640" y="140" text-anchor="middle" font-size="28" font-weight="bold" fill="#9fd8d3">micro:bit 아래쪽 가장자리</text>
-  ${(() => {
-      const big = [['0', 150], ['1', 400], ['2', 650], ['3V', 880], ['GND', 1060]];
-      let s = '';
-      // 작은 핀들
-      for (let i = 0; i < 20; i++) {
-        const x = 140 + i * 51;
-        s += `<rect x="${x}" y="200" width="12" height="34" rx="2" fill="#c9a227"/>`;
-      }
-      big.forEach(([n, x]) => {
-        s += `<rect x="${x - 22}" y="200" width="44" height="64" rx="3" fill="#e0b526" stroke="#8a6d12" stroke-width="2"/>
-  <circle cx="${x}" cy="240" r="11" fill="#0e6b64"/>
-  <text x="${x}" y="296" text-anchor="middle" font-size="24" font-weight="bold" fill="var(--fg)">${n}</text>`;
-      });
-      return s;
-    })()}
-  <text x="640" y="340" text-anchor="middle" font-size="21" fill="var(--muted)">넓은 단자 5개는 구멍이 뚫려 있어 <tspan font-weight="bold" fill="var(--fg)">악어클립</tspan>으로 집을 수 있습니다</text>
-  <rect x="120" y="366" width="330" height="96" rx="12" fill="var(--ok)" opacity=".13" stroke="var(--ok)" stroke-width="3"/>
-  <text x="285" y="398" text-anchor="middle" font-size="21" font-weight="bold" fill="var(--ok)">0 · 1 · 2</text>
-  <text x="285" y="428" text-anchor="middle" font-size="18" fill="var(--fg)">디지털 · 아날로그 · 터치</text>
-  <text x="285" y="452" text-anchor="middle" font-size="17" fill="var(--muted)">입력과 출력 모두 가능</text>
-  <rect x="475" y="366" width="330" height="96" rx="12" fill="var(--danger)" opacity=".13" stroke="var(--danger)" stroke-width="3"/>
-  <text x="640" y="398" text-anchor="middle" font-size="21" font-weight="bold" fill="var(--danger)">3V</text>
-  <text x="640" y="428" text-anchor="middle" font-size="18" fill="var(--fg)">전원 (+3.3V)</text>
-  <text x="640" y="452" text-anchor="middle" font-size="17" fill="var(--muted)">부품에 전기를 공급</text>
-  <rect x="830" y="366" width="330" height="96" rx="12" fill="var(--muted)" opacity=".18" stroke="var(--muted)" stroke-width="3"/>
-  <text x="995" y="398" text-anchor="middle" font-size="21" font-weight="bold" fill="var(--fg)">GND</text>
-  <text x="995" y="428" text-anchor="middle" font-size="18" fill="var(--fg)">접지 (0V)</text>
-  <text x="995" y="452" text-anchor="middle" font-size="17" fill="var(--muted)">전기가 돌아오는 길</text>
+  /* 보드를 그림 안에 놓는 위치 (보드 좌표 → 그림 좌표) */
+  const EBX = 412, EBY = 34;
+  const EP = (name) => [MB_FIG.ANCHOR.pad(name)[0] + EBX, MB_FIG.BOT + EBY];
+
+  const FIG_EDGE = `<svg viewBox="0 0 1280 570" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <text x="640" y="30" text-anchor="middle" font-size="26" font-weight="bold" fill="var(--fg)">엣지 커넥터 — micro:bit 가 바깥 세상과 만나는 곳</text>
+  ${MB_FIG.board({ x: EBX, y: EBY, leds: '0000001110011100111000000' })}
+  <!-- 커넥터 영역 강조 -->
+  <rect x="${EBX + 34}" y="${EBY + 288}" width="392" height="${MB_FIG.BOT - 288 + 6}" rx="8" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="8 6"/>
+  <!-- 설명 상자로 이어지는 선 -->
+  ${[['0', 300], ['1', 300], ['2', 300], ['3V', 680], ['GND', 1030]].map(([n, tx]) => {
+      const [x, y] = EP(n);
+      return `<path d="M${x} ${y} L${x} ${y + 34} L${tx} 452" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="6 5"/>`;
+    }).join('\n  ')}
+  <rect x="100" y="452" width="400" height="104" rx="12" fill="var(--ok)" opacity=".13" stroke="var(--ok)" stroke-width="3"/>
+  <text x="300" y="486" text-anchor="middle" font-size="22" font-weight="bold" fill="var(--ok)">0 · 1 · 2</text>
+  <text x="300" y="516" text-anchor="middle" font-size="18" fill="var(--fg)">디지털 · 아날로그 · 터치</text>
+  <text x="300" y="542" text-anchor="middle" font-size="17" fill="var(--muted)">입력과 출력 모두 가능</text>
+  <rect x="530" y="452" width="300" height="104" rx="12" fill="var(--danger)" opacity=".13" stroke="var(--danger)" stroke-width="3"/>
+  <text x="680" y="486" text-anchor="middle" font-size="22" font-weight="bold" fill="var(--danger)">3V</text>
+  <text x="680" y="516" text-anchor="middle" font-size="18" fill="var(--fg)">전원 (+3.3V)</text>
+  <text x="680" y="542" text-anchor="middle" font-size="17" fill="var(--muted)">부품에 전기를 공급</text>
+  <rect x="860" y="452" width="340" height="104" rx="12" fill="var(--muted)" opacity=".18" stroke="var(--muted)" stroke-width="3"/>
+  <text x="1030" y="486" text-anchor="middle" font-size="22" font-weight="bold" fill="var(--fg)">GND</text>
+  <text x="1030" y="516" text-anchor="middle" font-size="18" fill="var(--fg)">접지 (0V)</text>
+  <text x="1030" y="542" text-anchor="middle" font-size="17" fill="var(--muted)">전기가 돌아오는 길</text>
+  <text x="140" y="120" font-size="21" fill="var(--fg)">보드 <tspan font-weight="bold">아래쪽 가장자리</tspan>의</text>
+  <text x="140" y="154" font-size="21" fill="var(--fg)">금색 단자가 엣지 커넥터입니다.</text>
+  <text x="140" y="206" font-size="19" fill="var(--muted)">넓은 단자 <tspan font-weight="bold" fill="var(--fg)">5개</tspan>는 구멍이 뚫려 있어</text>
+  <text x="140" y="236" font-size="19" fill="var(--muted)"><tspan font-weight="bold" fill="var(--fg)">악어클립</tspan>으로 집을 수 있습니다.</text>
+  <text x="140" y="288" font-size="19" fill="var(--muted)">좁은 단자는 확장 보드를</text>
+  <text x="140" y="318" font-size="19" fill="var(--muted)">끼워야 쓸 수 있습니다.</text>
 </svg>`;
 
   const FIG_LED = `<svg viewBox="0 0 1280 400" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">

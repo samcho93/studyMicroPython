@@ -4,13 +4,8 @@
 (function () {
   const FIG_AXES = `<svg viewBox="0 0 1280 520" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
   <text x="640" y="36" text-anchor="middle" font-size="26" font-weight="bold" fill="var(--fg)">가속도 센서의 세 축 — x · y · z</text>
-  <!-- 보드 -->
-  <rect x="440" y="150" width="400" height="250" rx="26" fill="#0e6b64" stroke="#0a4f4a" stroke-width="3"/>
-  ${Array.from({ length: 25 }, (_, i) => `<rect x="${560 + (i % 5) * 34}" y="${215 + Math.floor(i / 5) * 28}" width="12" height="18" rx="3" fill="#4a1a16"/>`).join('')}
-  <circle cx="620" cy="185" r="8" fill="#d4a017"/><circle cx="660" cy="185" r="8" fill="#d4a017"/>
-  <rect x="470" y="250" width="44" height="44" rx="8" fill="#101418"/><text x="492" y="318" text-anchor="middle" font-size="17" fill="#cfe9e6">A</text>
-  <rect x="766" y="250" width="44" height="44" rx="8" fill="#101418"/><text x="788" y="318" text-anchor="middle" font-size="17" fill="#cfe9e6">B</text>
-  <!-- x 축 -->
+  <!-- 보드 (가운데) -->
+  ${MB_FIG.board({ x: 466, y: 128, scale: 0.75, labels: false, btnLabel: false, ics: false })}
   <defs>
     <marker id="c8x" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="var(--danger)"/></marker>
     <marker id="c8y" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="var(--ok)"/></marker>
