@@ -136,6 +136,7 @@
     setRunning(on) {
       this.stopBtn.disabled = !on;
       this.el.classList.toggle('running', on);
+      this.app.onRunState(on ? 'running' : 'idle');
     }
 
     /* -------------------------------------------- 파이썬 셸 (>>>) */
@@ -184,7 +185,14 @@
     stop() {
       if (this.app.serialMode()) { this.app.serialStop(); return; }
       MbEngine.stop();
-      this.app.onRunState('idle');
+      if (this.background) {
+        // main.py 는 이미 끝났고 애니메이션 · 음악만 돌고 있던 상태
+        this.background = false;
+        this.setRunning(false);
+        this.setState('idle', '중지됨');
+        this.left.textContent = '■ 백그라운드 동작을 멈췄습니다';
+        this.write('m', '── 백그라운드 동작 정지 ──\n');
+      }
     }
 
     /* -------------------------------------------- main.py 실행 */
@@ -198,6 +206,7 @@
 
       const run = { code, done: false, label: opts.label || '' };
       this.run = run;
+      this.background = false;
       if (store.get('mb.keepConsole', '0') !== '1') this.clear();
       else if (this.out.textContent.trim()) this.html('<span class="run-sep"></span>');
       this.main.textContent = opts.label ? '· ' + opts.label : '';
@@ -238,6 +247,7 @@
       }
       const sec = ((performance.now() - started) / 1000).toFixed(2);
       if (result === 'background') {
+        this.background = true;
         this.setState('running', '백그라운드');
         this.left.textContent = '▶ main.py 는 끝났지만 애니메이션 · 음악이 계속 돌고 있습니다 (■ 정지)';
         this.write('m', `\n── main.py 끝 (${sec}초) · 백그라운드 동작 계속 ──\n`);
