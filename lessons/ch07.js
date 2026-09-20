@@ -240,6 +240,79 @@ random.randint(1, 100)`,
           },
           { type: 'callout', kind: 'more', title: 'seed 는 어디에 쓸까?', html: '<p>“무작위인데 똑같이 재현되는” 성질은 <b>디버깅</b>과 <b>테스트</b>에 아주 유용합니다. 게임의 버그를 찾을 때 같은 seed 로 같은 상황을 다시 만들 수 있으니까요.</p><p>seed 를 주지 않으면 micro:bit 는 시작할 때의 상태(전원이 켜진 시각 등)를 seed 로 씁니다. 그래서 실행할 때마다 다른 결과가 나옵니다.</p><p>진짜 무작위가 필요한 암호 같은 분야에서는 전자 잡음, 방사성 붕괴 등 <b>물리 현상</b>을 이용한 난수 발생기를 씁니다.</p>' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 정말 고르게 나올까? (분포 확인)', code: `from microbit import *
+import random
+
+N = 600
+counts = [0, 0, 0, 0, 0, 0]
+
+display.show(Image.ALL_CLOCKS, delay=40)
+
+for i in range(N):
+    n = random.randint(1, 6)
+    counts[n - 1] = counts[n - 1] + 1
+
+print(N, "번 굴린 결과")
+for i in range(6):
+    print(" ", i + 1, "→", counts[i], "번 (", counts[i] * 100 // N, "% )")
+
+# 화면에도 막대로 (가장 많이 나온 눈을 기준으로)
+top = max(counts)
+display.clear()
+for i in range(5):
+    h = counts[i] * 5 // top
+    for y in range(h):
+        display.set_pixel(i, 4 - y, 9)`,
+            desc: '600번 굴리면 각 눈이 대략 100번씩(약 16%) 나옵니다. 딱 맞지는 않지만 <b>많이 굴릴수록 고르게</b> 가까워집니다 — 이것이 확률의 성질입니다. 숫자를 60으로 줄여 다시 해 보세요.',
+            expect: '600 번 굴린 결과\n  1 → 98 번 ( 16 % )\n  2 → 107 번 ( 17 % ) …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 잘 나오는 것과 드문 것 (가중치)', code: `from microbit import *
+import random
+
+# 리스트에 여러 번 넣으면 그만큼 자주 뽑힌다
+BAG = ["COMMON"] * 7 + ["RARE"] * 2 + ["LEGEND"] * 1
+FACE = {"COMMON": Image.MEH, "RARE": Image.HAPPY, "LEGEND": Image.FABULOUS}
+
+print("주머니:", BAG)
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    if button_a.was_pressed():
+        item = random.choice(BAG)
+        display.show(FACE[item])
+        display.scroll(item, delay=70)
+        print("뽑힘:", item)
+        display.show(Image.SQUARE_SMALL)
+    sleep(50)`,
+            desc: '같은 값을 <b>여러 번 넣어 두면</b> 그만큼 자주 뽑힙니다. 게임의 아이템 뽑기가 이런 식으로 동작합니다. 이 주머니에서 LEGEND 가 나올 확률은 10% 입니다.',
+            expect: 'A 를 누를 때마다 COMMON 이 자주, LEGEND 가 드물게 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. choice 와 shuffle 의 차이', code: `from microbit import *
+import random
+
+names = ["A", "B", "C", "D", "E"]
+
+# choice: 같은 것이 또 나올 수 있다
+picked = [random.choice(names) for i in range(5)]
+print("choice 5번:", picked)
+
+# shuffle: 순서만 섞이고 하나씩 모두 나온다
+pool = list(names)
+random.shuffle(pool)
+print("shuffle 결과:", pool)
+
+display.scroll("".join(pool), delay=90)`,
+            desc: '<code>choice</code> 를 5번 하면 <code>[&quot;A&quot;, &quot;C&quot;, &quot;C&quot;, &quot;E&quot;, &quot;A&quot;]</code> 처럼 <b>겹칠 수 있습니다</b>. 제비뽑기처럼 <b>한 번씩만</b> 나와야 한다면 <code>shuffle</code> 을 써야 합니다. <code>"".join(리스트)</code> 는 글자들을 하나의 문자열로 붙입니다.',
+            expect: "choice 5번: ['C', 'A', 'C', 'E', 'B']\nshuffle 결과: ['D', 'A', 'E', 'C', 'B']",
+            nondeterministic: true
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -533,6 +606,302 @@ while True:
             nondeterministic: true
           },
           { type: 'callout', kind: 'warn', title: 'list(names) 로 복사하기', html: '<code>pool = names</code> 라고 쓰면 <b>같은 리스트를 가리키는 다른 이름</b>일 뿐입니다. <code>pool.pop()</code> 을 하면 <code>names</code> 도 함께 줄어듭니다. <code>list(names)</code> 또는 <code>names[:]</code> 로 <b>복사본</b>을 만들어야 원본이 그대로 남습니다.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 무작위로 걸어 다니는 점', code: `from microbit import *
+import random
+
+x, y = 2, 2
+
+while True:
+    display.clear()
+    display.set_pixel(x, y, 9)
+
+    # 네 방향 중 하나로 한 칸
+    dx, dy = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
+    x = max(0, min(4, x + dx))
+    y = max(0, min(4, y + dy))
+
+    sleep(220)`,
+            desc: '매번 <b>네 방향 중 하나</b>를 무작위로 골라 한 칸씩 움직입니다. 이것을 <b>무작위 걷기(random walk)</b> 라고 하며, 분자의 운동이나 주가 변동을 흉내 낼 때 쓰는 모형입니다.',
+            expect: '점이 화면 안을 제멋대로 돌아다닙니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 무작위 패턴 만들기', code: `from microbit import *
+import random
+
+while True:
+    if button_a.was_pressed():
+        # 25칸의 밝기를 무작위로 정해 그림 하나를 만든다
+        rows = []
+        for y in range(5):
+            row = ""
+            for x in range(5):
+                row = row + str(random.choice([0, 0, 0, 5, 9]))
+            rows.append(row)
+
+        art = Image(":".join(rows))
+        display.show(art)
+        print(repr(art))
+    sleep(50)`,
+            desc: '밝기를 무작위로 골라 그림을 만듭니다. <code>[0, 0, 0, 5, 9]</code> 처럼 0 을 여러 번 넣어 <b>꺼진 칸이 더 많이</b> 나오게 했습니다. 마음에 드는 무늬가 나오면 콘솔의 <code>Image(\'…\')</code> 를 복사해 쓰세요.',
+            expect: "Image('00509:90000:00090:05000:00009:')",
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 동전을 100번 던지면', code: `from microbit import *
+import random
+
+display.show(Image.ALL_CLOCKS, delay=40)
+
+heads = 0
+streak = 0
+best = 0
+prev = None
+
+for i in range(100):
+    coin = random.choice(["H", "T"])
+    if coin == "H":
+        heads = heads + 1
+    # 같은 면이 몇 번 이어졌나
+    streak = streak + 1 if coin == prev else 1
+    best = max(best, streak)
+    prev = coin
+
+print("앞면:", heads, "/ 뒷면:", 100 - heads)
+print("같은 면이 가장 길게 이어진 횟수:", best)
+display.scroll("H" + str(heads) + " S" + str(best), delay=80)`,
+            desc: '100번 던지면 앞면이 대략 50번쯤 나옵니다. 그런데 <b>같은 면이 5~7번 연속</b>으로 나오는 일도 흔합니다. “무작위인데 왜 몰려서 나오지?” 하는 느낌이 드는 이유입니다.',
+            expect: '앞면: 48 / 뒷면: 52\n같은 면이 가장 길게 이어진 횟수: 6',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 무작위로 만드는 놀이' },
+          { type: 'p', html: '난수와 리스트를 조합하면 교실에서 바로 쓸 수 있는 놀이 도구가 됩니다. 이름과 개수를 우리 반에 맞게 바꿔 보세요.' },
+          {
+            type: 'code', title: '응용 예제 7-1. 빙고 번호 추첨기', code: `from microbit import *
+import random
+import music
+
+MAX_NUMBER = 25
+pool = []
+drawn = []
+
+display.scroll("BINGO", delay=60)
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    if button_a.was_pressed():
+        if not pool:
+            pool = list(range(1, MAX_NUMBER + 1))
+            random.shuffle(pool)
+            drawn = []
+            display.scroll("NEW", delay=60)
+
+        n = pool.pop()
+        drawn.append(n)
+
+        display.show(Image.ALL_CLOCKS, delay=40)
+        display.scroll(str(n), delay=100)
+        music.pitch(600 + n * 20, 120)
+        print(len(drawn), "번째:", n, "/ 남은 수:", len(pool))
+        display.show(Image.SQUARE_SMALL)
+
+    if button_b.was_pressed():
+        display.scroll(str(len(drawn)) + "/" + str(MAX_NUMBER), delay=80)
+        print("지금까지:", drawn)
+        display.show(Image.SQUARE_SMALL)
+
+    if pin_logo.is_touched():
+        pool = []
+        display.show(Image.NO)
+        sleep(500)
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(50)`,
+            desc: '<b>중복 없이</b> 1~25 를 하나씩 뽑습니다. A 로 뽑고, B 로 지금까지 몇 개 뽑았는지 확인하고, 로고를 만지면 새로 시작합니다. 뽑힌 번호는 콘솔에 모두 기록됩니다.',
+            expect: 'A 를 누를 때마다 다른 번호가 나오고, 25개가 모두 나오면 새로 섞입니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 7-2. 돌아가는 룰렛', code: `from microbit import *
+import random
+import music
+
+# 테두리 16칸을 시계 방향으로
+RIM = [(2, 0), (3, 0), (4, 0), (4, 1), (4, 2), (4, 3),
+       (4, 4), (3, 4), (2, 4), (1, 4), (0, 4), (0, 3),
+       (0, 2), (0, 1), (0, 0), (1, 0)]
+PRIZE = ["WIN", "LOSE", "AGAIN", "BONUS"]
+
+display.show(Image.DIAMOND)
+
+while True:
+    if button_a.was_pressed():
+        pos = random.randint(0, len(RIM) - 1)
+        speed = 40
+        turns = random.randint(20, 34)        # 몇 칸 더 돌지
+
+        for step in range(turns):
+            pos = (pos + 1) % len(RIM)
+            display.clear()
+            display.set_pixel(2, 2, 3)
+            x, y = RIM[pos]
+            display.set_pixel(x, y, 9)
+            music.pitch(900, 15)
+            sleep(speed)
+            speed = speed + 8                 # 점점 느려진다
+
+        # 멈춘 칸을 4등분해 상품 결정
+        prize = PRIZE[pos // 4]
+        sleep(400)
+        display.scroll(prize, delay=80)
+        music.play(music.POWER_UP if prize != "LOSE" else music.WAWAWAWAA)
+        display.show(Image.DIAMOND)
+
+    sleep(50)`,
+            desc: '<code>speed</code> 를 조금씩 늘려 <b>점점 느려지다 멈추게</b> 했습니다. 이 연출 하나로 훨씬 그럴듯한 룰렛이 됩니다. 멈춘 위치를 4로 나눠 네 가지 상품 중 하나를 정합니다.',
+            expect: 'A 를 누르면 점이 테두리를 돌다가 천천히 멈추고 결과가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 7-3. 모둠 나누기', code: `from microbit import *
+import random
+
+MEMBERS = ["MIN", "SUA", "JUN", "HA", "YUL", "DOY", "NAM", "SOL"]
+GROUPS = 2
+
+display.scroll("TEAM", delay=60)
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    if button_a.was_pressed():
+        pool = list(MEMBERS)
+        random.shuffle(pool)
+
+        teams = [[] for i in range(GROUPS)]
+        for i, name in enumerate(pool):
+            teams[i % GROUPS].append(name)      # 돌아가며 한 명씩
+
+        for i, team in enumerate(teams):
+            print("모둠", i + 1, ":", team)
+            display.scroll(str(i + 1) + " " + " ".join(team), delay=80)
+            sleep(400)
+
+        display.show(Image.YES)
+        sleep(600)
+        display.show(Image.SQUARE_SMALL)
+
+    if button_b.was_pressed():
+        GROUPS = GROUPS % 4 + 1                 # 2 → 3 → 4 → 1 → 2
+        display.scroll("G" + str(GROUPS), delay=70)
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(50)`,
+            desc: '이름을 섞은 뒤 <b>번갈아 나눠</b> 인원이 고르게 들어가게 했습니다(<code>i % GROUPS</code>). B 로 모둠 수를 바꿀 수 있습니다. <code>MEMBERS</code> 를 우리 반 이름으로 바꿔 보세요.',
+            expect: '모둠 1 : [\'HA\', \'MIN\', \'SOL\', \'JUN\']\n모둠 2 : [\'DOY\', \'YUL\', \'SUA\', \'NAM\']',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 7-4. 별이 쏟아지는 밤하늘', code: `from microbit import *
+import random
+
+# 각 칸의 밝기를 직접 관리한다
+sky = [[0] * 5 for y in range(5)]
+
+while True:
+    # ① 가끔 새 별이 태어난다
+    if random.random() < 0.5:
+        sky[random.randint(0, 4)][random.randint(0, 4)] = 9
+
+    # ② 모든 별이 조금씩 어두워진다
+    for y in range(5):
+        for x in range(5):
+            if sky[y][x] > 0:
+                sky[y][x] = sky[y][x] - 1
+
+    # ③ 화면에 그린다
+    for y in range(5):
+        for x in range(5):
+            display.set_pixel(x, y, sky[y][x])
+
+    # ④ 아주 가끔 별똥별
+    if random.random() < 0.08:
+        for i in range(5):
+            display.clear()
+            display.set_pixel(4 - i, i, 9)
+            if i > 0:
+                display.set_pixel(5 - i, i - 1, 4)
+            sleep(50)
+
+    sleep(120)`,
+            desc: '<code>[[0] * 5 for y in range(5)]</code> 로 <b>5×5 표</b>를 만들어 각 칸의 밝기를 기억합니다. 별이 무작위로 태어나 서서히 사라지고, 가끔 별똥별이 지나갑니다. 확률 숫자를 바꿔 밤하늘의 분위기를 조절해 보세요.',
+            expect: '별이 반짝이다 사라지고, 가끔 별똥별이 지나갑니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 7-5. 숫자 기억 게임', code: `from microbit import *
+import random
+import music
+
+seq = []
+best = 0
+
+display.scroll("MEMORY", delay=60)
+
+while True:
+    seq = []
+    round_no = 0
+
+    while True:
+        # ① 숫자 하나 추가해서 보여 주기
+        seq.append(random.randint(0, 9))
+        round_no = len(seq)
+
+        display.scroll("R" + str(round_no), delay=60)
+        for n in seq:
+            display.show(n)
+            music.pitch(400 + n * 60, 120)
+            sleep(500)
+            display.clear()
+            sleep(180)
+
+        # ② 따라 입력하기 (A 로 숫자 올리고 B 로 확정)
+        ok = True
+        for want in seq:
+            pick = 0
+            display.show(pick)
+            while True:
+                if button_a.was_pressed():
+                    pick = (pick + 1) % 10
+                    display.show(pick)
+                if button_b.was_pressed():
+                    break
+                sleep(40)
+
+            if pick != want:
+                ok = False
+                break
+            music.pitch(900, 60)
+
+        if not ok:
+            display.show(Image.NO)
+            music.play(music.WAWAWAWAA)
+            best = max(best, round_no - 1)
+            display.scroll("S" + str(round_no - 1) + " B" + str(best), delay=80)
+            break
+
+        display.show(Image.YES)
+        music.play(music.BA_DING)
+        sleep(500)
+
+    sleep(800)`,
+            desc: '숫자가 한 개씩 늘어나는 기억력 게임입니다. A 로 숫자를 고르고 B 로 확정합니다. 사람이 한 번에 기억할 수 있는 숫자는 보통 <b>5 ~ 9개</b> 라고 합니다 — 몇 개까지 되는지 도전해 보세요.',
+            expect: '숫자가 차례로 보인 뒤 따라 입력하면 다음 라운드로 넘어갑니다.',
+            nondeterministic: true
+          },
 
           { type: 'h', text: '2교시 · 7장 요약' },
           {

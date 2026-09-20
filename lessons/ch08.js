@@ -255,6 +255,78 @@ while True:
             ]
           },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 세 축을 막대 세 개로 보기', code: `from microbit import *
+
+while True:
+    values = accelerometer.get_values()
+
+    display.clear()
+    for i in range(3):
+        # -1024~1024 를 0~4 높이로
+        h = scale(values[i], from_=(-1024, 1024), to=(0, 4))
+        col = i * 2                      # 0, 2, 4 열에 그린다
+        for y in range(h + 1):
+            display.set_pixel(col, 4 - y, 9)
+
+    sleep(80)`,
+            hint: '🧭 <b>센서 탭</b>의 기울기 판을 끌고 “앞면 아래” 버튼도 눌러 보세요.',
+            desc: '왼쪽 막대가 <b>x</b>, 가운데가 <b>y</b>, 오른쪽이 <b>z</b> 입니다. 세 값이 동시에 어떻게 변하는지 눈으로 보면 축의 의미가 훨씬 빨리 이해됩니다.',
+            expect: '기울이는 방향에 따라 세 막대의 높이가 달라집니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 몇 도나 기울었을까 (각도 계산)', code: `from microbit import *
+import math
+
+while True:
+    x = accelerometer.get_x()
+    y = accelerometer.get_y()
+    z = accelerometer.get_z()
+
+    # 좌우로 몇 도 기울었나 (도 단위)
+    roll = math.degrees(math.atan2(x, -z))
+    pitch = math.degrees(math.atan2(y, -z))
+
+    print("좌우:", int(roll), "도  앞뒤:", int(pitch), "도")
+    display.show(str(abs(int(roll)) // 10))
+    sleep(300)`,
+            hint: '🧭 기울기 판을 조금씩 움직이며 각도를 확인해 보세요.',
+            desc: '<code>atan2(a, b)</code> 는 두 변의 길이로 <b>각도</b>를 구해 줍니다. <code>math.degrees()</code> 로 라디안을 도(°)로 바꿉니다. 평평하면 0도, 완전히 세우면 ±90도입니다.',
+            expect: '좌우: 0 도  앞뒤: 0 도\n좌우: 30 도  앞뒤: -12 도 …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 가장 센 충격 기록하기', code: `from microbit import *
+
+peak = 0
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    s = accelerometer.get_strength()
+    if s > peak:
+        peak = s
+        print("새 기록:", peak)
+
+    # A: 기록 보기
+    if button_a.was_pressed():
+        display.scroll(str(peak), delay=80)
+        display.show(Image.SQUARE_SMALL)
+
+    # B: 기록 초기화
+    if button_b.was_pressed():
+        peak = 0
+        display.show(Image.NO)
+        sleep(400)
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(20)`,
+            hint: '🧭 <b>흔들기</b> 버튼을 여러 번 눌러 최고 기록을 갱신해 보세요.',
+            desc: '지금까지 중 <b>가장 큰 값</b>만 남깁니다. 가만히 두어도 중력 때문에 1024 정도는 기록됩니다. 실제 보드로는 살살 흔들기 · 세게 흔들기의 차이를 재 볼 수 있습니다.',
+            expect: '새 기록: 1024\n새 기록: 2871 …',
+            nondeterministic: true
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -565,6 +637,324 @@ while True:
         sleep(50)`,
             desc: '<code>running_time() - start &lt; TIME_LIMIT</code> 으로 30초 동안만 반복합니다. 목표를 고르는 부분은 <code>new_goal()</code> 함수로 묶어 코드를 정리했습니다. A 를 누르면 새 게임이 시작됩니다.',
             expect: '30초 동안 점수를 쌓고, 끝나면 점수가 흘러갑니다.',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 기울인 쪽이 아래가 되는 화살표', code: `from microbit import *
+
+ARROWS = [Image.ARROW_N, Image.ARROW_NE, Image.ARROW_E, Image.ARROW_SE,
+          Image.ARROW_S, Image.ARROW_SW, Image.ARROW_W, Image.ARROW_NW]
+
+while True:
+    x = accelerometer.get_x()
+    y = accelerometer.get_y()
+
+    if abs(x) < 250 and abs(y) < 250:
+        display.show(Image.DIAMOND_SMALL)       # 거의 평평
+    else:
+        # 8방향 중 기울어진 쪽을 고른다
+        import math
+        angle = math.degrees(math.atan2(x, -y)) % 360
+        display.show(ARROWS[int((angle + 22.5) // 45) % 8])
+
+    sleep(100)`,
+            desc: '화살표가 <b>항상 아래쪽(중력 방향)</b>을 가리킵니다. 보드를 어떻게 돌려도 방향을 알 수 있어, 화면 회전이나 방향 표시에 쓸 수 있습니다. 각도를 8등분하는 방법은 10장에서 다시 나옵니다.',
+            expect: '기울인 방향으로 화살표가 따라 돕니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 마찰 값을 바꿔 느낌 비교하기', code: `from microbit import *
+
+FRICTION = 0.98          # ← 0.98(얼음) 0.9(보통) 0.7(모래) 로 바꿔 보세요
+
+px, vx = 2.0, 0.0
+
+while True:
+    vx = (vx + accelerometer.get_x() / 500) * FRICTION
+    px = px + vx
+
+    if px < 0:
+        px, vx = 0, -vx * 0.6
+    if px > 4:
+        px, vx = 4, -vx * 0.6
+
+    display.clear()
+    display.set_pixel(int(px + 0.5), 2, 9)
+    sleep(50)`,
+            hint: '🧭 기울기 판을 좌우로 끌었다가 평평하게 두어 보세요.',
+            desc: '<code>FRICTION</code> 만 바꿔 가며 실행해 보세요. <b>0.98</b> 은 미끄러운 얼음처럼 잘 멈추지 않고, <b>0.7</b> 은 모래 위처럼 금방 멈춥니다. 게임의 “손맛”은 이런 숫자 하나로 결정됩니다.',
+            expect: '기울이면 점이 굴러가고, 마찰 값에 따라 멈추는 속도가 달라집니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 흔든 세기를 점수로', code: `from microbit import *
+import music
+
+power = 0
+DECAY = 2                # 가만히 두면 줄어드는 속도
+
+while True:
+    s = accelerometer.get_strength()
+    if s > 1400:
+        power = min(100, power + (s - 1400) // 120)
+        music.pitch(400 + power * 8, 20)
+    else:
+        power = max(0, power - DECAY)
+
+    level = power * 5 // 100
+    display.clear()
+    for y in range(level):
+        for x in range(5):
+            display.set_pixel(x, 4 - y, 9)
+
+    if power >= 100:
+        display.show(Image.FABULOUS)
+        music.play(music.POWER_UP)
+        power = 0
+        sleep(400)
+
+    sleep(50)`,
+            hint: '🧭 <b>흔들기</b> 버튼을 빠르게 여러 번 눌러 게이지를 채워 보세요.',
+            desc: '흔들수록 게이지가 차고, 멈추면 서서히 줄어듭니다. 게이지를 가득 채우면 축하 화면이 나옵니다. 운동회나 파티 게임에 쓰기 좋습니다.',
+            expect: '흔들면 막대가 차오르고, 가득 차면 축하 표시가 나옵니다.',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 움직임으로 만드는 도구와 게임' },
+          { type: 'p', html: '가속도 센서 하나로 계측기부터 게임까지 만들 수 있습니다. 실제 보드가 있으면 손에 들고 움직이며 해 보세요 — 시뮬레이터와는 또 다른 재미가 있습니다.' },
+          {
+            type: 'code', title: '응용 예제 8-1. 소리로 알려 주는 정밀 수평계', code: `from microbit import *
+import music
+
+TOLERANCE = 50          # 이 안에 들면 "수평"
+last_beep = 0
+
+while True:
+    x = accelerometer.get_x()
+    y = accelerometer.get_y()
+    off = max(abs(x), abs(y))          # 얼마나 기울었나
+
+    if off < TOLERANCE:
+        display.show(Image.YES)
+        if running_time() - last_beep > 900:
+            music.pitch(1200, 120)
+            last_beep = running_time()
+    else:
+        # 기포 표시
+        col = scale(x, from_=(-1024, 1024), to=(0, 4))
+        row = scale(y, from_=(-1024, 1024), to=(0, 4))
+        display.clear()
+        display.set_pixel(2, 2, 2)
+        display.set_pixel(col, row, 9)
+
+        # 수평에 가까울수록 삐 소리가 빨라진다
+        gap = scale(min(off, 800), from_=(0, 800), to=(120, 900))
+        if running_time() - last_beep > gap:
+            music.pitch(700, 40)
+            last_beep = running_time()
+
+    sleep(40)`,
+            hint: '🧭 기울기 판을 조금씩 가운데로 옮겨 보세요.',
+            desc: '수평에 가까워질수록 <b>삐 소리가 빨라집니다</b>. 화면을 보지 않고 소리만으로 맞출 수 있어, 선반이나 액자를 걸 때 실제로 쓸 수 있습니다. 주차 보조 센서와 같은 방식입니다.',
+            expect: '기울면 느린 삐 소리, 수평에 가까우면 빨라지다가 체크 표시',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 8-2. 디지털 물병', code: `from microbit import *
+
+WATER = 12               # 물의 양 (칸 수, 0~25)
+
+while True:
+    x = accelerometer.get_x()
+    y = accelerometer.get_y()
+
+    # 기울기에 따라 수면이 기울어진다
+    tilt = scale(x, from_=(-1024, 1024), to=(-2.0, 2.0))
+    base = scale(y, from_=(-1024, 1024), to=(4.5, 0.5))
+
+    display.clear()
+    left = WATER
+    for col in range(5):
+        # 이 열의 수면 높이
+        surface = base + tilt * (col - 2) / 2
+        h = max(0, min(5, int(surface + 0.5)))
+        for y2 in range(h):
+            if left > 0:
+                display.set_pixel(col, 4 - y2, 7 if y2 == h - 1 else 9)
+                left = left - 1
+
+    sleep(60)`,
+            hint: '🧭 기울기 판을 천천히 이리저리 끌어 보세요.',
+            desc: '기울이면 물이 한쪽으로 쏠립니다. 수면의 맨 윗칸만 조금 어둡게 그려 <b>물결</b>처럼 보이게 했습니다. <code>WATER</code> 를 바꾸면 물의 양이 달라집니다.',
+            expect: '기울인 쪽으로 물이 쏠립니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 8-3. 균형 잡기 게임', code: `from microbit import *
+import music
+
+TIME_LIMIT = 15000       # 15초 버티기
+TOLERANCE = 320
+
+display.scroll("BALANCE", delay=60)
+
+while True:
+    display.scroll("3", delay=90)
+    display.scroll("2", delay=90)
+    display.scroll("1", delay=90)
+
+    start = running_time()
+    lives = 3
+
+    while running_time() - start < TIME_LIMIT and lives > 0:
+        x = accelerometer.get_x()
+        y = accelerometer.get_y()
+        off = max(abs(x), abs(y))
+
+        col = scale(x, from_=(-1024, 1024), to=(0, 4))
+        row = scale(y, from_=(-1024, 1024), to=(0, 4))
+
+        display.clear()
+        display.set_pixel(2, 2, 2)
+        display.set_pixel(col, row, 9)
+
+        if off > TOLERANCE:
+            lives = lives - 1
+            music.pitch(200, 150)
+            display.show(Image.SAD)
+            sleep(500)
+
+        sleep(70)
+
+    if lives > 0:
+        display.show(Image.HAPPY)
+        music.play(music.POWER_UP)
+        display.scroll("CLEAR", delay=70)
+    else:
+        display.show(Image.SKULL)
+        music.play(music.WAWAWAWAA)
+        held = (running_time() - start) // 1000
+        display.scroll(str(held) + "S", delay=80)
+
+    display.show(Image.ARROW_E)
+    while not button_a.was_pressed():
+        sleep(50)`,
+            hint: '🧭 기울기 판을 가운데 근처에 유지해 보세요.',
+            desc: '15초 동안 보드를 <b>평평하게</b> 유지해야 합니다. 세 번 기울면 실패하고 버틴 시간이 나옵니다. 실제 보드를 손바닥이나 머리 위에 올려 놓고 하면 훨씬 재미있습니다.',
+            expect: '평평하게 유지하면 성공, 세 번 기울면 실패',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 8-4. 흔들기 파워 측정기', code: `from microbit import *
+import music
+
+MEASURE_MS = 5000
+
+display.scroll("POWER", delay=60)
+display.show(Image.ARROW_E)
+
+while True:
+    if button_a.was_pressed():
+        display.scroll("GO", delay=60)
+
+        start = running_time()
+        total = 0
+        peak = 0
+        shakes = 0
+        above = False
+
+        while running_time() - start < MEASURE_MS:
+            s = accelerometer.get_strength()
+            total = total + s
+            peak = max(peak, s)
+
+            if s > 1800:
+                if not above:
+                    shakes = shakes + 1
+                    above = True
+                    music.pitch(1000, 15)
+            else:
+                above = False
+
+            # 남은 시간 막대
+            left = MEASURE_MS - (running_time() - start)
+            h = left * 5 // MEASURE_MS
+            display.clear()
+            for y in range(h):
+                for x in range(5):
+                    display.set_pixel(x, 4 - y, 9)
+            sleep(30)
+
+        avg = total // max(1, MEASURE_MS // 30)
+        print("횟수:", shakes, " 평균:", avg, " 최고:", peak)
+
+        display.scroll(str(shakes) + "X", delay=80)
+        if shakes >= 30:
+            display.show(Image.FABULOUS)
+            music.play(music.POWER_UP)
+        else:
+            display.show(Image.MEH)
+            music.play(music.BA_DING)
+        sleep(800)
+        display.show(Image.ARROW_E)
+
+    sleep(50)`,
+            hint: '🧭 <b>흔들기</b> 버튼을 5초 동안 최대한 많이 눌러 보세요.',
+            desc: '5초 동안 흔든 <b>횟수 · 평균 세기 · 최고 세기</b>를 함께 잽니다. 막대가 줄어들며 남은 시간을 알려 줍니다. 반 친구들과 기록을 겨뤄 보세요.',
+            expect: '횟수: 32  평균: 1640  최고: 3210',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 8-5. 택배 상자 충격 기록계', code: `from microbit import *
+
+THRESHOLD = 2000
+log_list = []
+armed = True
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    s = accelerometer.get_strength()
+
+    if armed and s > THRESHOLD:
+        t = running_time() // 1000
+        log_list.append((t, s))
+        if len(log_list) > 20:
+            log_list.pop(0)
+        print("충격!", t, "초 /", s)
+
+        display.show(Image.ANGRY)
+        sleep(600)
+        display.show(Image.SQUARE_SMALL)
+
+    # 자유 낙하 감지 (떨어지는 중에는 무중력에 가까워진다)
+    if armed and accelerometer.current_gesture() == "freefall":
+        print("떨어지는 중!")
+        display.show(Image.SKULL)
+        sleep(500)
+        display.show(Image.SQUARE_SMALL)
+
+    # A: 기록 개수와 최고 충격 보기
+    if button_a.was_pressed():
+        if log_list:
+            worst = max(log_list, key=lambda r: r[1])
+            display.scroll(str(len(log_list)) + "X " + str(worst[1]), delay=80)
+            print("전체 기록:", log_list)
+        else:
+            display.show(Image.YES)
+            sleep(600)
+        display.show(Image.SQUARE_SMALL)
+
+    # B: 감시 켜기 / 끄기
+    if button_b.was_pressed():
+        armed = not armed
+        display.show(Image.YES if armed else Image.ASLEEP)
+        sleep(500)
+        display.show(Image.SQUARE_SMALL if armed else Image.ASLEEP)
+
+    sleep(30)`,
+            hint: '🧭 <b>흔들기</b> 와 <b>자유낙하</b> 버튼을 눌러 보세요.',
+            desc: '택배 상자에 넣어 두면 <b>언제 얼마나 세게 충격을 받았는지</b> 기록합니다. <code>max(리스트, key=lambda r: r[1])</code> 는 “두 번째 값이 가장 큰 항목” 을 찾는 방법입니다. 실제 물류에서 쓰는 충격 기록계와 같은 원리입니다.',
+            expect: '충격! 12 초 / 2840',
             nondeterministic: true
           },
 

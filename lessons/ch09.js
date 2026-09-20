@@ -211,6 +211,84 @@ while True:
           },
           { type: 'callout', kind: 'board', title: '실제 보드에서 흔들기', html: '실제 micro:bit 를 손에 쥐고 <b>좌우로 빠르게</b> 흔들면 <code>shake</code> 가 인식됩니다. 너무 살살 흔들면 인식되지 않고, 너무 세게 흔들면 <code>3g</code> · <code>6g</code> 로 인식될 수 있습니다. 건전지 팩을 연결해 USB 없이 흔들어 보면 더 재미있습니다.' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 제스처마다 몇 번 했는지 세기', code: `from microbit import *
+
+counts = {}
+
+display.show(Image.ARROW_E)
+
+while True:
+    for g in accelerometer.get_gestures():      # 그동안 쌓인 동작 전부
+        counts[g] = counts.get(g, 0) + 1
+        print(g, "→", counts[g], "번")
+
+    if button_a.was_pressed():
+        print("--- 전체 ---")
+        for name in counts:
+            print(name, ":", counts[name])
+        display.scroll(str(sum(counts.values())), delay=80)
+        display.show(Image.ARROW_E)
+
+    sleep(100)`,
+            hint: '🧭 <b>센서 탭</b>의 제스처 버튼들을 여러 번 눌러 보세요.',
+            desc: '<code>get_gestures()</code> 로 쌓인 동작을 모두 꺼내 <b>딕셔너리</b>에 횟수를 기록합니다. <code>counts.get(g, 0) + 1</code> 은 “처음 보는 동작이면 0 에서 시작” 이라는 뜻입니다.',
+            expect: 'shake → 1 번\nleft → 1 번\nshake → 2 번',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. is 와 was 를 나란히 비교', code: `from microbit import *
+
+is_count = 0
+was_count = 0
+
+while True:
+    if accelerometer.is_gesture("shake"):
+        is_count = is_count + 1
+    if accelerometer.was_gesture("shake"):
+        was_count = was_count + 1
+
+    print("is_gesture 누적:", is_count, " / was_gesture 누적:", was_count)
+    display.show(was_count % 10)
+    sleep(100)`,
+            hint: '🧭 <b>흔들기</b> 버튼을 한 번 길게 눌러 보세요.',
+            desc: '한 번 흔드는 동안 <code>is_gesture</code> 는 <b>여러 번</b> 세고, <code>was_gesture</code> 는 <b>한 번만</b> 셉니다. 4장의 <code>is_pressed</code> · <code>was_pressed</code> 와 똑같습니다.',
+            expect: 'is_gesture 누적: 7  / was_gesture 누적: 1',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 최근 동작 기록판', code: `from microbit import *
+
+ICON = {
+    "shake": Image.CONFUSED, "up": Image.ARROW_N, "down": Image.ARROW_S,
+    "left": Image.ARROW_W, "right": Image.ARROW_E,
+    "face up": Image.HAPPY, "face down": Image.ASLEEP,
+    "freefall": Image.SKULL,
+}
+recent = []
+
+while True:
+    g = accelerometer.current_gesture()
+    if g and (not recent or recent[-1] != g):
+        recent.append(g)
+        if len(recent) > 5:
+            recent.pop(0)
+        print("최근 5개:", recent)
+
+    # A 를 누르면 최근 동작을 차례로 다시 보여 준다
+    if button_a.was_pressed():
+        for name in recent:
+            display.show(ICON.get(name, Image.MEH))
+            sleep(500)
+
+    display.show(ICON.get(g, Image.DIAMOND_SMALL))
+    sleep(100)`,
+            desc: '<b>동작이 바뀔 때만</b> 기록해 같은 동작이 여러 번 쌓이지 않게 했습니다. <code>recent.pop(0)</code> 으로 항상 최근 5개만 남깁니다. A 를 누르면 기록을 되감아 보여 줍니다.',
+            expect: "최근 5개: ['face up', 'left', 'shake']",
+            nondeterministic: true
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -496,6 +574,331 @@ while True:
     sleep(80)`,
             desc: '동작이 <b>바뀔 때만</b> 기록해 같은 동작이 여러 번 쌓이는 것을 막았습니다. <code>log.pop(0)</code> 은 <b>맨 앞</b>을 꺼내 지웁니다 — 최근 20개만 남기는 방법입니다.',
             expect: '동작이 바뀔 때마다 콘솔에 기록되고, A 로 전체 기록을 봅니다.',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 기울여서 넘기는 사진첩', code: `from microbit import *
+
+ALBUM = [Image.HAPPY, Image.DUCK, Image.RABBIT, Image.GIRAFFE,
+         Image.BUTTERFLY, Image.HOUSE, Image.UMBRELLA]
+index = 0
+
+display.show(ALBUM[index])
+
+while True:
+    if accelerometer.was_gesture("right"):
+        index = (index + 1) % len(ALBUM)
+        display.show(ALBUM[index])
+        print("다음 →", index)
+    if accelerometer.was_gesture("left"):
+        index = (index - 1) % len(ALBUM)
+        display.show(ALBUM[index])
+        print("← 이전", index)
+    if accelerometer.was_gesture("shake"):
+        index = 0
+        display.show(ALBUM[index])
+
+    sleep(80)`,
+            hint: '🧭 <b>왼쪽</b> · <b>오른쪽</b> 버튼을 눌러 보세요.',
+            desc: '스마트폰에서 사진을 넘기듯 기울여서 그림을 넘깁니다. <code>(index - 1) % len()</code> 은 파이썬에서 <b>0 에서 뒤로 가면 마지막</b>이 되므로 따로 처리하지 않아도 됩니다.',
+            expect: '오른쪽으로 기울이면 다음 그림, 왼쪽이면 이전 그림'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 연속 동작(콤보) 알아채기', code: `from microbit import *
+import music
+
+COMBO = ["left", "right", "shake"]
+progress = 0
+last_at = 0
+TIMEOUT = 2500            # 이 시간 안에 다음 동작이 와야 한다
+
+display.show(Image.SQUARE)
+
+while True:
+    # 시간이 지나면 처음부터
+    if progress > 0 and running_time() - last_at > TIMEOUT:
+        progress = 0
+        display.show(Image.SQUARE)
+
+    g = accelerometer.current_gesture()
+    if g == COMBO[progress]:
+        progress = progress + 1
+        last_at = running_time()
+        music.pitch(600 + progress * 200, 80)
+        display.show(progress)
+        sleep(400)
+
+        if progress == len(COMBO):
+            display.show(Image.FABULOUS)
+            music.play(music.POWER_UP)
+            display.scroll("COMBO", delay=70)
+            progress = 0
+            display.show(Image.SQUARE)
+
+    sleep(60)`,
+            hint: '🧭 <b>왼쪽 → 오른쪽 → 흔들기</b> 를 2.5초 안에 차례로 눌러 보세요.',
+            desc: '격투 게임의 커맨드처럼 <b>정해진 순서</b>로 동작해야 성공합니다. <code>last_at</code> 으로 시간 제한을 두어, 너무 느리면 처음부터 다시 하게 했습니다.',
+            expect: '순서대로 하면 음이 올라가고 마지막에 COMBO 가 나옵니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 동작 + 버튼 조합', code: `from microbit import *
+
+while True:
+    g = accelerometer.current_gesture()
+    shift = button_a.is_pressed()        # A = 시프트 키처럼
+
+    if g == "shake":
+        display.show(Image.SKULL if shift else Image.CONFUSED)
+        print("흔들기" + (" + A" if shift else ""))
+        sleep(400)
+    elif g == "left":
+        display.show(Image.ARROW_NW if shift else Image.ARROW_W)
+        sleep(300)
+    elif g == "right":
+        display.show(Image.ARROW_NE if shift else Image.ARROW_E)
+        sleep(300)
+    else:
+        display.show(Image.SQUARE_SMALL if shift else Image.DIAMOND_SMALL)
+
+    sleep(60)`,
+            desc: 'A 버튼을 <b>시프트 키</b>처럼 써서 같은 동작에 두 가지 기능을 담았습니다. 입력 수단이 적은 장치에서 기능을 늘리는 흔한 방법입니다.',
+            expect: 'A 를 누른 채 기울이면 다른 화살표가 나옵니다.'
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 동작으로 조작하는 장치' },
+          { type: 'p', html: '버튼을 누르지 않고 <b>보드를 움직이는 것만으로</b> 조작하는 프로그램들입니다. 실제 보드를 손에 들고 해 보면 훨씬 실감납니다.' },
+          {
+            type: 'code', title: '응용 예제 9-1. 동작 인식 표시기', code: `from microbit import *
+import music
+
+SHOW = {
+    "up": (Image.ARROW_N, "UP", 784),
+    "down": (Image.ARROW_S, "DOWN", 523),
+    "left": (Image.ARROW_W, "LEFT", 659),
+    "right": (Image.ARROW_E, "RIGHT", 698),
+    "face up": (Image.HAPPY, "FRONT", 880),
+    "face down": (Image.ASLEEP, "BACK", 440),
+    "shake": (Image.CONFUSED, "SHAKE", 330),
+    "freefall": (Image.SKULL, "FALL", 262),
+}
+
+display.show(Image.DIAMOND_SMALL)
+last = ""
+
+while True:
+    g = accelerometer.current_gesture()
+
+    if g and g != last:
+        picture, text, hz = SHOW.get(g, (Image.MEH, g.upper(), 500))
+        display.show(picture)
+        music.pitch(hz, 120)
+        print(text)
+        last = g
+    elif not g:
+        last = ""
+        display.show(Image.DIAMOND_SMALL)
+
+    sleep(80)`,
+            desc: '동작을 인식할 때마다 <b>그림 · 글자 · 소리</b> 세 가지로 알려 줍니다. 동작이 <b>바뀔 때만</b> 반응하도록 <code>last</code> 로 직전 동작을 기억했습니다. 제스처를 배우는 연습 도구로 좋습니다.',
+            expect: '동작할 때마다 해당 화살표와 소리가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 9-2. 흔들어 섞는 카드 마술', code: `from microbit import *
+import random
+import music
+
+CARDS = [Image.HEART, Image.DIAMOND, Image.SQUARE, Image.TRIANGLE,
+         Image.TARGET, Image.SKULL, Image.DUCK, Image.MUSIC_QUAVER]
+NAMES = ["HEART", "DIAMOND", "SQUARE", "TRIANGLE",
+         "TARGET", "SKULL", "DUCK", "NOTE"]
+
+deck = list(range(len(CARDS)))
+top = 0
+
+display.show(Image.SQUARE)
+
+while True:
+    # 흔들면 섞는다
+    if accelerometer.was_gesture("shake"):
+        random.shuffle(deck)
+        top = 0
+        display.show(Image.ALL_CLOCKS, delay=40)
+        music.play(music.JUMP_UP)
+        display.show(Image.SQUARE)
+        print("덱을 섞었습니다:", [NAMES[i] for i in deck])
+
+    # 앞면이 아래로 = 카드를 뽑는다
+    if accelerometer.was_gesture("face down"):
+        if top < len(deck):
+            card = deck[top]
+            top = top + 1
+            display.show(CARDS[card])
+            music.pitch(500 + card * 60, 120)
+            print(top, "번째 카드:", NAMES[card])
+            sleep(1200)
+        else:
+            display.show(Image.NO)
+            music.play(music.WAWAWAWAA)
+            sleep(600)
+        display.show(Image.SQUARE)
+
+    sleep(80)`,
+            hint: '🧭 <b>흔들기</b> 로 섞고, <b>앞면 아래</b> 로 카드를 뽑습니다.',
+            desc: '흔들어 섞고 뒤집어 뽑는, <b>진짜 카드처럼</b> 조작하는 프로그램입니다. 콘솔에는 섞인 순서가 그대로 보이므로 마술 연습에 쓸 수도 있습니다.',
+            expect: '흔들면 섞이고, 뒤집을 때마다 다른 카드가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 9-3. 시키는 대로 움직이기 게임', code: `from microbit import *
+import random
+import music
+
+ORDERS = [
+    ("left", Image.ARROW_W), ("right", Image.ARROW_E),
+    ("up", Image.ARROW_N), ("down", Image.ARROW_S),
+    ("shake", Image.CONFUSED), ("face down", Image.ASLEEP),
+]
+
+display.scroll("GO", delay=60)
+score = 0
+limit = 2500
+
+while True:
+    want, picture = random.choice(ORDERS)
+    display.show(picture)
+
+    # 이전 동작 기록을 비운다
+    accelerometer.get_gestures()
+
+    start = running_time()
+    done = False
+    while running_time() - start < limit:
+        if accelerometer.was_gesture(want):
+            done = True
+            break
+        sleep(40)
+
+    if done:
+        score = score + 1
+        limit = max(900, limit - 60)          # 갈수록 빨라진다
+        display.show(Image.YES)
+        music.pitch(1000, 80)
+        sleep(250)
+    else:
+        display.show(Image.NO)
+        music.play(music.WAWAWAWAA)
+        display.scroll("SCORE " + str(score), delay=80)
+        score = 0
+        limit = 2500
+        display.show(Image.ARROW_E)
+        while not button_a.was_pressed():
+            sleep(50)`,
+            hint: '🧭 화면에 나온 화살표 방향의 제스처 버튼을 제한 시간 안에 누르세요.',
+            desc: '화면이 지시하는 동작을 <b>제한 시간 안에</b> 해야 합니다. 맞힐수록 제한 시간이 짧아져 점점 어려워집니다. 실제 보드로 하면 몸을 움직이는 놀이가 됩니다.',
+            expect: '지시대로 움직이면 점수가 올라가고, 틀리면 점수가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 9-4. 자세 알리미', code: `from microbit import *
+import music
+
+WARN_MS = 8000           # 이만큼 엎드려 있으면 알림 (수업에서는 짧게)
+face_down_since = None
+warned = False
+
+display.show(Image.HAPPY)
+
+while True:
+    down = accelerometer.is_gesture("face down")
+
+    if down:
+        if face_down_since is None:
+            face_down_since = running_time()
+            warned = False
+
+        held = running_time() - face_down_since
+        left = max(0, WARN_MS - held)
+
+        if left == 0 and not warned:
+            warned = True
+            for i in range(3):
+                display.show(Image.ANGRY)
+                music.play(music.WAWAWAWAA)
+                sleep(200)
+                display.clear()
+                sleep(150)
+            print("너무 오래 엎드려 있었습니다!")
+        elif not warned:
+            # 남은 시간을 막대로
+            h = left * 5 // WARN_MS
+            display.clear()
+            for y in range(h):
+                for x in range(5):
+                    display.set_pixel(x, 4 - y, 5)
+    else:
+        if face_down_since is not None:
+            held = (running_time() - face_down_since) // 1000
+            print("엎드린 시간:", held, "초")
+        face_down_since = None
+        warned = False
+        display.show(Image.HAPPY)
+
+    sleep(100)`,
+            hint: '🧭 <b>앞면 아래</b> 버튼을 누른 채로 두었다가 <b>앞면 위</b> 로 바꿔 보세요.',
+            desc: '보드를 책상에 <b>엎어 두면</b> 시간이 흐르고, 일정 시간이 지나면 알려 줍니다. 공부할 때 책상에 두고 “엎드려 자지 않기” 알리미로 써 보세요. 막대가 줄어들며 남은 시간을 보여 줍니다.',
+            expect: '엎어 두면 막대가 줄어들고, 다 줄면 경고가 울립니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 9-5. 흔들어야 꺼지는 알람', code: `from microbit import *
+import music
+
+WAIT_SEC = 10            # 몇 초 뒤에 울릴까
+NEED_SHAKES = 8          # 몇 번 흔들어야 꺼질까
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    if button_a.was_pressed():
+        # ① 대기
+        display.scroll(str(WAIT_SEC), delay=70)
+        end = running_time() + WAIT_SEC * 1000
+        while running_time() < end:
+            display.show(Image.ALL_CLOCKS[(running_time() // 200) % 12])
+            if button_b.was_pressed():       # 취소
+                end = 0
+            sleep(50)
+
+        if end == 0:
+            display.show(Image.NO)
+            sleep(500)
+            display.show(Image.SQUARE_SMALL)
+            continue
+
+        # ② 알람! 정해진 횟수만큼 흔들어야 꺼진다
+        accelerometer.get_gestures()
+        left = NEED_SHAKES
+        while left > 0:
+            display.show(left)
+            music.play(music.RINGTONE, wait=False)
+            if accelerometer.was_gesture("shake"):
+                left = left - 1
+                music.pitch(1200, 60)
+            sleep(120)
+
+        music.stop()
+        display.show(Image.HAPPY)
+        music.play(music.POWER_UP)
+        display.scroll("AWAKE", delay=70)
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(50)`,
+            hint: '🧭 알람이 울리면 <b>흔들기</b> 버튼을 8번 누르세요.',
+            desc: '버튼 한 번으로는 끌 수 없고 <b>여러 번 흔들어야</b> 꺼집니다. 잠에서 확실히 깨게 하는 알람 앱들이 쓰는 방법입니다. 남은 횟수가 화면에 표시됩니다.',
+            expect: 'A 로 알람을 걸고, 울리면 8번 흔들어야 꺼집니다.',
             nondeterministic: true
           },
 
