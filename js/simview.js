@@ -41,48 +41,62 @@
     /* ─────────────────── 보드 그림 ─────────────────── */
     buildBoard() {
       const led = (i) => {
-        const x = 148 + (i % 5) * 34, y = 96 + Math.floor(i / 5) * 30;
+        const x = 156 + (i % 5) * 34, y = 108 + Math.floor(i / 5) * 30;
         return `<rect class="mb-led" data-led="${i}" x="${x}" y="${y}" width="12" height="20" rx="3"/>`;
       };
-      let edge = '';
-      const W = 460, x0 = 26, x1 = 434;
-      EDGE.forEach((name, i) => {
+
+      /* 엣지 커넥터: 실제 보드처럼 하단 가장자리(y = BOT)까지 닿는 금도금 패드.
+       * 큰 패드 5개(0 · 1 · 2 · 3V · GND)는 넓고 악어클립용 구멍이 뚫려 있다. */
+      const BOT = 363;              // 보드 아래 가장자리
+      const PAD_X0 = 42;            // 커넥터 시작
+      const PAD_SPAN = 376;         // 커넥터 전체 너비
+      const W_BIG = 36, W_SMALL = 8;
+      const totalPads = EDGE.reduce((a, n) => a + (BIG[n] ? W_BIG : W_SMALL), 0);
+      const gap = (PAD_SPAN - totalPads) / (EDGE.length - 1);
+
+      let edge = '', labels = '', x = PAD_X0;
+      EDGE.forEach((name) => {
         const big = BIG[name];
-        const w = big ? 26 : 8;
-        const x = x0 + (x1 - x0 - w) * (i / (EDGE.length - 1));
+        const w = big ? W_BIG : W_SMALL;
+        const top = big ? 302 : 318;
         edge += `<g class="mb-pad${big ? ' big' : ''}" data-pad="${name}">
-          <rect x="${x.toFixed(1)}" y="296" width="${w}" height="${big ? 46 : 26}" rx="2"/>
           <title>${esc(padTitle(name))}</title>
-          ${big ? `<text x="${(x + w / 2).toFixed(1)}" y="318" text-anchor="middle">${name === 'GND' ? 'G' : name === '3V' ? '3V' : name}</text>` : ''}
+          <rect x="${x.toFixed(1)}" y="${top}" width="${w}" height="${BOT - top}" rx="1.5"/>
+          ${big ? `<circle class="mb-hole" cx="${(x + w / 2).toFixed(1)}" cy="330" r="12"/>` : ''}
         </g>`;
+        if (big) labels += `<text x="${(x + w / 2).toFixed(1)}" y="294" text-anchor="middle">${name}</text>`;
+        x += w + gap;
       });
 
-      this.host.innerHTML = `<svg viewBox="0 0 460 356" class="mb-svg" xmlns="http://www.w3.org/2000/svg">
+      this.host.innerHTML = `<svg viewBox="0 0 460 377" class="mb-svg" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="mbGlow" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
-        <path class="mb-body" d="M14 34 Q14 14 34 14 L426 14 Q446 14 446 34 L446 258 Q446 296 404 296 L56 296 Q14 296 14 258 Z"/>
+        <!-- 보드 (위쪽 모서리는 둥글고, 아래쪽 두 귀퉁이는 비스듬히 잘린 실제 모양) -->
+        <path class="mb-body" d="M14 44 Q14 14 44 14 L416 14 Q446 14 446 44 L446 338 L421 ${BOT} L39 ${BOT} L14 338 Z"/>
+        <!-- 엣지 커넥터 -->
         <g class="mb-edge">${edge}</g>
+        <g class="mb-edge-label">${labels}</g>
         <!-- 로고(터치) -->
         <g class="mb-logo" data-touch="logo"><title>로고 터치 (pin_logo.is_touched())</title>
-          <circle cx="212" cy="46" r="9"/><circle cx="248" cy="46" r="9"/>
-          <rect x="203" y="55" width="54" height="10" rx="5" class="mb-logo-bar"/>
+          <circle cx="212" cy="52" r="10"/><circle cx="248" cy="52" r="10"/>
+          <rect x="202" y="63" width="56" height="11" rx="5.5" class="mb-logo-bar"/>
         </g>
+        <!-- 마이크 표시등 (V2: 앞면 오른쪽 위) -->
+        <g class="mb-ic" id="mbMic"><title>마이크 (microphone)</title><circle cx="400" cy="54" r="13"/><text x="400" y="60" text-anchor="middle">🎙</text></g>
         <!-- 버튼 -->
         <g class="mb-btn" data-btn="A"><title>버튼 A (button_a)</title>
-          <rect x="52" y="140" width="56" height="56" rx="10"/><circle cx="80" cy="168" r="15"/>
-          <text x="80" y="218" text-anchor="middle">A</text></g>
+          <rect x="48" y="146" width="58" height="58" rx="10"/><circle cx="77" cy="175" r="16"/>
+          <text x="77" y="228" text-anchor="middle">A</text></g>
         <g class="mb-btn" data-btn="B"><title>버튼 B (button_b)</title>
-          <rect x="352" y="140" width="56" height="56" rx="10"/><circle cx="380" cy="168" r="15"/>
-          <text x="380" y="218" text-anchor="middle">B</text></g>
+          <rect x="354" y="146" width="58" height="58" rx="10"/><circle cx="383" cy="175" r="16"/>
+          <text x="383" y="228" text-anchor="middle">B</text></g>
         <!-- LED 화면 -->
         <g class="mb-screen">${Array.from({ length: 25 }, (_, i) => led(i)).join('')}</g>
-        <!-- 스피커 · 마이크 -->
-        <g class="mb-ic" id="mbSpeaker"><title>스피커</title><circle cx="70" cy="258" r="13"/><text x="70" y="263" text-anchor="middle">♪</text></g>
-        <g class="mb-ic" id="mbMic"><title>마이크 (microphone)</title><circle cx="390" cy="258" r="13"/><text x="390" y="263" text-anchor="middle">🎙</text></g>
-        <text class="mb-name" x="230" y="282" text-anchor="middle">micro:bit V2 · 시뮬레이터</text>
+        <!-- 스피커 (V2: 뒷면에 있지만 위치를 표시) -->
+        <g class="mb-ic" id="mbSpeaker"><title>스피커 (speaker)</title><circle cx="56" cy="256" r="14"/><text x="56" y="262" text-anchor="middle">♪</text></g>
       </svg>
       <div class="mb-parts" id="mbParts"></div>`;
       this.leds = [...this.host.querySelectorAll('[data-led]')];

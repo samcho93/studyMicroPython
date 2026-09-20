@@ -20,7 +20,7 @@
 
 /* ---------------------------------------------------------------- 보드 그림 */
 .sim-board { flex: none; padding: 8px 10px 4px; background: var(--card2); border-bottom: 1px solid var(--line); }
-.mb-svg { width: 100%; max-height: 260px; display: block; }
+.mb-svg { width: 100%; max-height: 290px; display: block; }
 .mb-body { fill: #0e6b64; stroke: #0a4f4a; stroke-width: 2; }
 :root[data-theme="dark"] .mb-body { fill: #0c5a55; stroke: #073f3b; }
 .mb-screen rect.mb-led { fill: #3a1512; transition: opacity .06s linear; }
@@ -40,17 +40,19 @@
 .mb-logo:hover circle { fill: #ffd166; }
 .mb-logo.on circle, .mb-logo.on .mb-logo-bar { fill: #ffe08a; opacity: 1; }
 
-.mb-edge .mb-pad rect { fill: #c9a227; stroke: #8a6d12; stroke-width: .6; }
+/* 엣지 커넥터: 보드 하단 가장자리에 박힌 금도금 패드 */
+.mb-edge .mb-pad rect { fill: #c9a227; }
 .mb-edge .mb-pad.big { cursor: pointer; }
-.mb-edge .mb-pad.big rect { fill: #e0b526; }
+.mb-edge .mb-pad.big rect { fill: #e2b727; }
 .mb-edge .mb-pad.big:hover rect { fill: #ffd85e; }
 .mb-edge .mb-pad.big.on rect { fill: #fff0b0; }
-.mb-edge .mb-pad text { fill: #2b2205; font: 700 12px var(--sans); pointer-events: none; }
+.mb-edge .mb-hole { fill: #0e6b64; stroke: #b08f18; stroke-width: 1.4; pointer-events: none; }
+:root[data-theme="dark"] .mb-edge .mb-hole { fill: #0c5a55; }
+.mb-edge-label text { fill: #d9f0ed; font: 700 13px var(--sans); pointer-events: none; }
 
 .mb-ic circle { fill: #11171c; stroke: #0a1013; }
 .mb-ic text { font-size: 13px; fill: #9fd8d3; }
 .mb-ic.on circle { fill: #1f6f4a; }
-.mb-name { fill: #9fd8d3; font: 600 12px var(--sans); opacity: .8; }
 
 .mb-parts { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 2px 4px; }
 .mini-part {
@@ -161,6 +163,6 @@
 
 /* 좁은 화면 */
 @media (max-width: 1100px) {
-  .mb-svg { max-height: 200px; }
+  .mb-svg { max-height: 220px; }
   .sim-tabs button { padding: 5px 7px; font-size: 11.5px; }
 }
