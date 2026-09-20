@@ -262,6 +262,97 @@ while True:
             ]
           },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 색 이름표 만들어 두기', code: `from microbit import *
+import neopixel
+
+np = neopixel.NeoPixel(pin0, 8)
+
+COLORS = {
+    "red": (255, 0, 0), "orange": (255, 110, 0), "yellow": (255, 220, 0),
+    "green": (0, 255, 0), "cyan": (0, 220, 220), "blue": (0, 60, 255),
+    "purple": (140, 0, 255), "pink": (255, 60, 140), "white": (255, 255, 255),
+}
+B = 0.25
+
+
+def dim(c):
+    return (int(c[0] * B), int(c[1] * B), int(c[2] * B))
+
+
+for name in COLORS:
+    print(name, COLORS[name])
+    np.fill(dim(COLORS[name]))
+    np.show()
+    display.scroll(name[0].upper(), delay=60)
+    sleep(300)
+
+np.clear()`,
+            desc: '자주 쓰는 색에 <b>이름</b>을 붙여 두면 <code>COLORS["blue"]</code> 처럼 읽기 좋게 쓸 수 있습니다. 밝기를 낮추는 <code>dim()</code> 도 한 번 만들어 두면 계속 재사용합니다.',
+            expect: '띠가 아홉 가지 색으로 차례로 바뀝니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 왕복하는 빛 (나이트 라이더)', code: `from microbit import *
+import neopixel
+
+np = neopixel.NeoPixel(pin0, 8)
+N = len(np)
+B = 0.3
+
+pos = 0
+step = 1
+
+while True:
+    np.clear()
+    # 가운데는 밝게, 양옆은 흐리게 (꼬리)
+    for d, k in [(-2, 0.08), (-1, 0.3), (0, 1.0), (1, 0.3), (2, 0.08)]:
+        i = pos + d
+        if 0 <= i < N:
+            np[i] = (int(255 * k * B), 0, 0)
+    np.show()
+
+    pos = pos + step
+    if pos <= 0 or pos >= N - 1:
+        step = -step               # 끝에 닿으면 방향을 바꾼다
+    sleep(70)`,
+            hint: '🧩 부품 탭에서 빛이 좌우로 왕복하는 것을 보세요.',
+            desc: '<code>step</code> 의 부호를 뒤집어 <b>왕복</b>시킵니다. 가운데를 밝게, 양옆을 흐리게 칠해 <b>잔상(꼬리)</b>을 만들면 훨씬 부드러워 보입니다. 옛날 드라마의 자동차 램프로 유명한 효과입니다.',
+            expect: '빨간 빛이 꼬리를 끌며 좌우로 왕복합니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 한 칸씩 채워지는 게이지', code: `from microbit import *
+import neopixel
+
+np = neopixel.NeoPixel(pin0, 8)
+N = len(np)
+B = 0.3
+
+value = 0
+
+display.show(0)
+
+while True:
+    if button_a.was_pressed():
+        value = min(N, value + 1)
+    if button_b.was_pressed():
+        value = max(0, value - 1)
+
+    np.clear()
+    for i in range(value):
+        # 앞쪽은 초록, 뒤로 갈수록 빨강
+        r = int(255 * i / max(1, N - 1) * B)
+        g = int(255 * (1 - i / max(1, N - 1)) * B)
+        np[i] = (r, g, 0)
+    np.show()
+
+    display.show(value)
+    sleep(80)`,
+            hint: '🧩 NeoPixel 을 P0 에 연결하고 A · B 로 게이지를 조절하세요.',
+            desc: '앞쪽은 초록, 뒤로 갈수록 빨강이 되어 <b>위험 수준</b>을 색으로 알려 줍니다. 배터리 잔량, 온도, 속도계 같은 표시에 그대로 쓸 수 있습니다.',
+            expect: 'A 로 게이지가 차오르고 색이 초록 → 빨강으로 바뀝니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -629,6 +720,489 @@ while True:
               '<b>프로젝트 모음</b>: <a href="https://microbit.org/projects/" target="_blank" rel="noopener">microbit.org/projects</a> — 수백 개의 아이디어.',
               '<b>MicroPython 공식</b>: <a href="https://micropython.org" target="_blank" rel="noopener">micropython.org</a> — 다른 보드로 넓혀 갈 때.'
             ]
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 서보를 부드럽게 움직이기', code: `from microbit import *
+
+SERVO_PIN = pin0
+SERVO_PIN.set_analog_period(20)
+now = 90
+
+
+def servo(angle):
+    angle = max(0, min(180, int(angle)))
+    SERVO_PIN.write_analog(26 + (angle * 102) // 180)
+
+
+def move_to(target, ms=600):
+    """지금 위치에서 target 까지 ms 동안 천천히 이동"""
+    global now
+    steps = max(1, ms // 20)
+    start = now
+    for i in range(steps + 1):
+        servo(start + (target - start) * i / steps)
+        sleep(20)
+    now = target
+
+
+servo(now)
+display.show(Image.ARROW_E)
+
+while True:
+    if button_a.was_pressed():
+        move_to(0)
+        display.show("0")
+    if button_b.was_pressed():
+        move_to(180)
+        display.show("1")
+    if pin_logo.is_touched():
+        move_to(90, 300)          # 빠르게 가운데로
+        display.show("-")
+    sleep(50)`,
+            hint: '🧩 <b>서보 모터 → P0</b>. 각도가 뚝 바뀌지 않고 천천히 도는지 보세요.',
+            desc: '목표 각도로 <b>한 번에</b> 보내면 서보가 덜컥 움직입니다. 여러 단계로 나눠 조금씩 보내면 <b>부드럽게</b> 움직여 훨씬 자연스럽고 기구에도 무리가 덜 갑니다.',
+            expect: 'A · B 로 서보가 천천히 0°와 180° 를 오갑니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 서보 두 개를 함께 (로봇 팔 관절)', code: `from microbit import *
+
+pin0.set_analog_period(20)
+pin1.set_analog_period(20)
+
+
+def servo(pin, angle):
+    angle = max(0, min(180, int(angle)))
+    pin.write_analog(26 + (angle * 102) // 180)
+
+
+# (어깨, 팔꿈치) 동작 순서
+POSES = [(90, 90), (30, 60), (30, 140), (150, 140), (150, 60), (90, 90)]
+
+display.show(Image.ARROW_E)
+
+while True:
+    if button_a.was_pressed():
+        for i, (a, b) in enumerate(POSES):
+            servo(pin0, a)
+            servo(pin1, b)
+            display.show(i)
+            print("자세", i, ":", a, b)
+            sleep(700)
+        display.show(Image.YES)
+        sleep(400)
+        display.show(Image.ARROW_E)
+    sleep(50)`,
+            hint: '🧩 <b>서보 두 개 → P0 · P1</b>',
+            desc: '관절 두 개의 각도를 <b>쌍으로 적어 둔 표</b>를 차례로 실행하면 정해진 동작을 반복합니다. 산업용 로봇 팔도 이런 식으로 “티칭” 된 자세를 재생합니다.',
+            expect: 'A 를 누르면 두 서보가 정해진 자세를 차례로 취합니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 문제를 찾는 습관 — print 로 들여다보기', code: `from microbit import *
+
+DEBUG = True             # ← False 로 바꾸면 로그가 사라진다
+
+
+def log(*args):
+    if DEBUG:
+        print("[DEBUG]", *args)
+
+
+count = 0
+state = "idle"
+
+while True:
+    if button_a.was_pressed():
+        count = count + 1
+        state = "counting"
+        log("A 눌림 → count =", count, "state =", state)
+
+    if button_b.was_pressed():
+        log("B 눌림 → 초기화 전 count =", count)
+        count = 0
+        state = "idle"
+        log("초기화 후 count =", count, "state =", state)
+
+    if count >= 5 and state != "done":
+        state = "done"
+        log("목표 도달!", count)
+        display.show(Image.YES)
+
+    display.show(count % 10) if state != "done" else None
+    sleep(60)`,
+            desc: '<code>log()</code> 함수를 만들어 두고 <code>DEBUG</code> 하나로 <b>전체 로그를 켜고 끄는</b> 방법입니다. 완성한 뒤 <code>DEBUG = False</code> 로 바꾸면 코드를 지우지 않고도 조용해집니다. 프로그램이 커질수록 꼭 필요한 습관입니다.',
+            expect: '[DEBUG] A 눌림 → count = 1 state = counting',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 완성된 작품 다섯 가지' },
+          { type: 'p', html: '지금까지 배운 것을 모두 모은 프로그램들입니다. 그대로 실행해 보고, 구조를 참고해 <b>나만의 프로젝트</b>를 설계해 보세요. 각 예제의 <b>설정 부분</b>만 바꿔도 전혀 다른 작품이 됩니다.' },
+          {
+            type: 'code', title: '응용 예제 14-1. 기울여서 색을 고르는 무드등', code: `from microbit import *
+import neopixel
+
+# 연결: NeoPixel → P0
+np = neopixel.NeoPixel(pin0, 8)
+N = len(np)
+B = 0.3
+mode = 0                  # 0 = 단색, 1 = 무지개, 2 = 촛불
+
+
+def wheel(pos):
+    pos = pos % 256
+    if pos < 85:
+        return (255 - pos * 3, pos * 3, 0)
+    if pos < 170:
+        pos = pos - 85
+        return (0, 255 - pos * 3, pos * 3)
+    pos = pos - 170
+    return (pos * 3, 0, 255 - pos * 3)
+
+
+def dim(c, k=B):
+    return (int(c[0] * k), int(c[1] * k), int(c[2] * k))
+
+
+offset = 0
+import random
+
+while True:
+    if button_a.was_pressed():
+        mode = (mode + 1) % 3
+        display.scroll(["SOLID", "RAINBOW", "CANDLE"][mode], delay=50)
+
+    if mode == 0:
+        # 좌우 기울기로 색, 앞뒤 기울기로 밝기
+        hue = scale(accelerometer.get_x(), from_=(-1024, 1024), to=(0, 255))
+        bright = scale(accelerometer.get_y(), from_=(-1024, 1024), to=(5, 60)) / 100
+        np.fill(dim(wheel(hue), bright))
+        display.show(Image.HEART)
+
+    elif mode == 1:
+        for i in range(N):
+            np[i] = dim(wheel(offset + i * 32))
+        offset = offset + 5
+        display.show(Image.DIAMOND)
+
+    else:
+        # 촛불처럼 은은하게 흔들리는 주황빛
+        for i in range(N):
+            f = random.randint(60, 100) / 100
+            np[i] = dim((255, 120, 10), B * f)
+        display.show(Image.SQUARE_SMALL)
+
+    np.show()
+    sleep(60 if mode != 2 else 120)`,
+            hint: '🧩 <b>NeoPixel → P0</b>. 🧭 기울기 판을 끌고 A 로 모드를 바꿔 보세요.',
+            desc: '세 가지 모드를 가진 무드등입니다. <b>단색</b> 모드는 기울기로 색과 밝기를 고르고, <b>무지개</b> 는 색이 흐르며, <b>촛불</b> 은 무작위로 흔들려 실제 촛불처럼 보입니다.',
+            expect: 'A 로 모드를 바꾸고, 기울이면 색과 밝기가 달라집니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 14-2. 기울기로 조종하는 로봇 팔', code: `from microbit import *
+
+# 연결: 어깨 서보 → P0, 팔꿈치 서보 → P1
+pin0.set_analog_period(20)
+pin1.set_analog_period(20)
+
+shoulder, elbow = 90, 90
+poses = []                # 기억해 둔 자세들
+
+
+def servo(pin, angle):
+    angle = max(0, min(180, int(angle)))
+    pin.write_analog(26 + (angle * 102) // 180)
+
+
+def apply(s, e):
+    servo(pin0, s)
+    servo(pin1, e)
+
+
+apply(shoulder, elbow)
+display.show(Image.ARROW_E)
+
+while True:
+    # 로고를 만지는 동안만 기울기로 조종 (실수 방지)
+    if pin_logo.is_touched():
+        shoulder = scale(accelerometer.get_x(), from_=(-1024, 1024), to=(0, 180))
+        elbow = scale(accelerometer.get_y(), from_=(-1024, 1024), to=(0, 180))
+        apply(shoulder, elbow)
+        display.clear()
+        display.set_pixel(scale(shoulder, from_=(0, 180), to=(0, 4)),
+                          scale(elbow, from_=(0, 180), to=(0, 4)), 9)
+
+    # A: 지금 자세를 기억
+    if button_a.was_pressed():
+        poses.append((shoulder, elbow))
+        print("자세 저장:", poses)
+        display.show(len(poses) % 10)
+        sleep(400)
+
+    # B: 기억한 자세를 차례로 재생
+    if button_b.was_pressed() and poses:
+        for i, (s, e) in enumerate(poses):
+            apply(s, e)
+            display.show(i % 10)
+            sleep(800)
+        display.show(Image.YES)
+        sleep(400)
+        display.show(Image.ARROW_E)
+
+    # 흔들면 기억 초기화
+    if accelerometer.was_gesture("shake"):
+        poses = []
+        display.show(Image.NO)
+        sleep(500)
+        display.show(Image.ARROW_E)
+
+    sleep(60)`,
+            hint: '🧩 <b>서보 두 개 → P0 · P1</b>. 로고를 누른 채 기울기 판을 끌어 보세요.',
+            desc: '로고를 만지는 동안만 조종되므로 <b>실수로 움직이는 일</b>이 없습니다. A 로 자세를 하나씩 기억했다가 B 로 재생하면, 산업용 로봇의 “티칭 재생” 과 똑같이 동작합니다.',
+            expect: '기울여 팔을 움직이고, A 로 저장한 자세를 B 로 재생합니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 14-3. 무선 응원봉 (NeoPixel)', code: `from microbit import *
+import radio
+import neopixel
+
+# 연결: NeoPixel → P1 (P0 는 소리에 쓰므로 비워 둔다)
+np = neopixel.NeoPixel(pin1, 8)
+N = len(np)
+B = 0.3
+
+radio.on()
+radio.config(group=7)
+
+COLORS = {"R": (255, 0, 0), "G": (0, 255, 0), "B": (0, 60, 255),
+          "Y": (255, 200, 0), "P": (160, 0, 255)}
+KEYS = list(COLORS)
+index = 0
+
+
+def dim(c):
+    return (int(c[0] * B), int(c[1] * B), int(c[2] * B))
+
+
+def effect(key):
+    color = dim(COLORS.get(key, (255, 255, 255)))
+    # 앞에서 뒤로 차오르고, 세 번 깜빡인다
+    for i in range(N):
+        np[i] = color
+        np.show()
+        sleep(35)
+    for i in range(3):
+        np.clear()
+        sleep(90)
+        np.fill(color)
+        np.show()
+        sleep(90)
+    np.clear()
+
+
+display.show(KEYS[index])
+
+while True:
+    # A: 색 고르기
+    if button_a.was_pressed():
+        index = (index + 1) % len(KEYS)
+        display.show(KEYS[index])
+        np.fill(dim(COLORS[KEYS[index]]))
+        np.show()
+        sleep(300)
+        np.clear()
+
+    # B: 모두에게 보내기 (내 것도 함께 실행)
+    if button_b.was_pressed():
+        radio.send(KEYS[index])
+        effect(KEYS[index])
+        display.show(KEYS[index])
+
+    got = radio.receive()
+    if got and got in COLORS:
+        effect(got)
+        display.show(KEYS[index])
+
+    sleep(40)`,
+            hint: '🧩 <b>NeoPixel → P1</b>. 📡 무선 탭 입력 칸에 <code>R</code> · <code>G</code> · <code>B</code> 를 넣어 보세요.',
+            desc: '한 사람이 B 를 누르면 <b>같은 그룹의 모든 응원봉</b>이 동시에 같은 색으로 빛납니다. 학급 행사나 공연에서 반 전체가 함께하면 장관입니다. 조별로 <code>group</code> 을 다르게 하면 조마다 다른 색을 낼 수도 있습니다.',
+            expect: 'B 를 누르면 띠가 차오르며 세 번 깜빡입니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 14-4. 자동 커튼 · 자동문', code: `from microbit import *
+import music
+
+# 연결: 서보 → P0, 조도 센서 → P1
+pin0.set_analog_period(20)
+
+OPEN_ANGLE, CLOSE_ANGLE = 160, 20
+DARK = 350                 # 이보다 어두우면 닫는다
+BRIGHT = 650               # 이보다 밝으면 연다
+HOLD_MS = 2000             # 이 시간 이상 유지돼야 움직인다
+
+state = "closed"
+since = running_time()
+now_angle = CLOSE_ANGLE
+
+
+def servo(a):
+    a = max(0, min(180, int(a)))
+    pin0.write_analog(26 + (a * 102) // 180)
+
+
+def move_to(target):
+    global now_angle
+    step = 2 if target > now_angle else -2
+    while abs(target - now_angle) > 2:
+        now_angle = now_angle + step
+        servo(now_angle)
+        sleep(15)
+    now_angle = target
+    servo(now_angle)
+
+
+servo(now_angle)
+display.show(Image.SQUARE)
+
+while True:
+    light = pin1.read_analog()
+
+    want = state
+    if light > BRIGHT:
+        want = "open"
+    elif light < DARK:
+        want = "closed"
+
+    if want != state:
+        # 잠깐 스친 그림자에 반응하지 않도록 잠시 지켜본다
+        if running_time() - since > HOLD_MS:
+            state = want
+            since = running_time()
+            display.show(Image.ALL_CLOCKS, delay=35)
+            music.play(music.JUMP_UP if state == "open" else music.JUMP_DOWN)
+            move_to(OPEN_ANGLE if state == "open" else CLOSE_ANGLE)
+            print("커튼", "열림" if state == "open" else "닫힘", "/ 밝기", light)
+    else:
+        since = running_time()
+
+    display.show(Image.SQUARE_SMALL if state == "open" else Image.SQUARE)
+
+    # 수동 조작
+    if button_a.was_pressed():
+        state = "open"
+        move_to(OPEN_ANGLE)
+    if button_b.was_pressed():
+        state = "closed"
+        move_to(CLOSE_ANGLE)
+
+    sleep(120)`,
+            hint: '🧩 <b>서보 → P0</b>, <b>조도 센서 → P1</b>. 조도 슬라이더를 크게 올렸다 내려 보세요.',
+            desc: '아침에 밝아지면 열리고 저녁에 어두워지면 닫힙니다. <b>여는 기준과 닫는 기준을 다르게</b>(650 / 350) 두어 경계에서 계속 왔다 갔다 하는 것을 막았습니다 — 이것을 <b>히스테리시스</b> 라고 하며 실제 제어기에서 반드시 쓰는 기법입니다.',
+            expect: '밝아지면 서보가 천천히 열리고, 어두워지면 닫힙니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 14-5. 교실 환경 대시보드 (종합)', code: `from microbit import *
+import neopixel
+import log
+import music
+
+# ── 설정 ─────────────────────────────────
+NP_PIN = pin1
+NP_COUNT = 8
+B = 0.25
+LOG_MS = 10000
+WARN_TEMP = 28
+WARN_NOISE = 150
+
+np = neopixel.NeoPixel(NP_PIN, NP_COUNT)
+log.set_labels("temp", "light", "sound", timestamp=log.SECONDS)
+
+MODES = ["TEMP", "LIGHT", "SOUND"]
+mode = 0
+next_log = running_time()
+rows = 0
+
+
+# ── 함수 ─────────────────────────────────
+def dim(c, k=1.0):
+    return (int(c[0] * B * k), int(c[1] * B * k), int(c[2] * B * k))
+
+
+def read_all():
+    return (temperature(),
+            display.read_light_level(),
+            microphone.sound_level())
+
+
+def bar(n, color):
+    """띠의 앞 n 칸을 color 로 채운다"""
+    np.clear()
+    for i in range(min(NP_COUNT, n)):
+        np[i] = color
+    np.show()
+
+
+def show_mode(temp, light, sound):
+    if mode == 0:
+        n = scale(temp, from_=(15, 32), to=(1, NP_COUNT))
+        bar(n, dim((255, 0, 0) if temp >= WARN_TEMP else (0, 160, 255)))
+        display.show(str(temp)[0])
+    elif mode == 1:
+        n = scale(light, from_=(0, 255), to=(1, NP_COUNT))
+        bar(n, dim((255, 220, 0)))
+        display.show(str(light // 26))
+    else:
+        n = scale(sound, from_=(0, 255), to=(0, NP_COUNT))
+        bar(n, dim((255, 0, 0) if sound >= WARN_NOISE else (0, 255, 0)))
+        display.show(str(sound // 26))
+
+
+# ── 준비 ─────────────────────────────────
+display.scroll("DASH", delay=55)
+
+# ── 메인 루프 ────────────────────────────
+while True:
+    temp, light, sound = read_all()
+
+    # ① 일정 간격으로 기록
+    if running_time() >= next_log:
+        log.add(temp=temp, light=light, sound=sound)
+        rows = rows + 1
+        next_log = next_log + LOG_MS
+
+    # ② 경고
+    if temp >= WARN_TEMP or sound >= WARN_NOISE:
+        np.fill(dim((255, 0, 0)))
+        np.show()
+        display.show(Image.ANGRY)
+        music.pitch(1200, 80)
+        sleep(200)
+    else:
+        show_mode(temp, light, sound)
+
+    # ③ 조작
+    if button_a.was_pressed():
+        mode = (mode + 1) % len(MODES)
+        display.scroll(MODES[mode], delay=50)
+
+    if button_b.was_pressed():
+        display.scroll(str(temp) + "C " + str(light) + "L " + str(sound) + "S", delay=75)
+        print("기록", rows, "건 / 온도", temp, "밝기", light, "소음", sound)
+
+    if accelerometer.was_gesture("shake"):
+        log.delete()
+        rows = 0
+        display.scroll("CLR", delay=55)
+
+    sleep(150)`,
+            hint: '🧩 <b>NeoPixel → P1</b>. 🧭 센서 탭의 온도 · 빛 · 소리 슬라이더를 움직여 보세요.',
+            desc: '<b>이 강좌의 거의 모든 내용</b>이 들어 있습니다 — 센서 읽기(1 · 8 · 12장), 화면(2 · 3장), 버튼과 제스처(4 · 9장), NeoPixel(14장), 데이터 로깅(11장), 소리(6장), 그리고 설정 → 함수 → 메인 루프의 구조. A 로 보는 항목을 바꾸고, B 로 자세한 값을 보고, 흔들면 기록을 지웁니다. 교실에 두고 하루 동안 기록해 보세요.',
+            expect: '띠가 센서 값을 나타내고, 기준을 넘으면 빨갛게 경고합니다.',
+            nondeterministic: true
           },
 
           { type: 'h', text: '마무리 — 14장의 여정' },

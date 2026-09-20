@@ -222,6 +222,86 @@ while True:
             ]
           },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 콘솔에 그래프 그리기', code: `from microbit import *
+
+print("light |" + "-" * 40 + "| 시간에 따른 밝기")
+
+while True:
+    light = display.read_light_level()          # 0 ~ 255
+    bars = light * 40 // 255
+    print("{:5d} |".format(light) + "#" * bars + " " * (40 - bars) + "|")
+    sleep(400)`,
+            hint: '🧭 <b>센서 탭</b>의 빛 슬라이더를 천천히 움직이며 콘솔을 보세요.',
+            desc: '콘솔에 <code>#</code> 을 값만큼 찍으면 <b>실시간 그래프</b>가 됩니다. 별다른 도구 없이 값의 변화를 한눈에 볼 수 있어 센서를 다룰 때 아주 유용합니다. <code>"{:5d}".format(n)</code> 은 숫자를 5칸에 맞춰 찍습니다.',
+            expect: '  128 |####################                    |',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 펄스 길이 재기', code: `from microbit import *
+from machine import time_pulse_us
+
+pin1.set_pull(pin1.PULL_DOWN)
+display.show(Image.ARROW_W)
+
+while True:
+    # P1 이 1 이 되는 동안의 길이를 마이크로초로 잰다 (최대 0.5초 대기)
+    us = time_pulse_us(pin1, 1, 500000)
+
+    if us > 0:
+        print("펄스 길이:", us, "us =", us / 1000, "ms")
+        display.show(Image.YES if us > 30000 else Image.NO)
+        sleep(400)
+        display.show(Image.ARROW_W)
+
+    sleep(20)`,
+            hint: '🔌 <b>핀 탭</b>에서 P1 을 1 로 바꿨다가 자동으로 되돌려 보세요.',
+            desc: '<code>time_pulse_us()</code> 는 신호가 <b>얼마나 오래</b> 유지됐는지 마이크로초 단위로 잽니다. 초음파 거리 센서(HC-SR04)가 거리를 재는 방법이 바로 이것입니다 — 소리가 갔다 오는 시간을 재는 것이지요.',
+            expect: '펄스 길이: 40000 us = 40.0 ms',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 핀으로 모스 부호 주고받기', code: `from microbit import *
+
+DOT_MAX = 300             # 이보다 짧으면 점, 길면 선
+
+pin1.set_pull(pin1.PULL_DOWN)
+marks = []
+last = 0
+high_at = 0
+idle_at = running_time()
+
+display.show(Image.ARROW_W)
+
+while True:
+    now = pin1.read_digital()
+
+    if last == 0 and now == 1:
+        high_at = running_time()
+    elif last == 1 and now == 0:
+        length = running_time() - high_at
+        marks.append("." if length < DOT_MAX else "-")
+        print("받음:", marks)
+        display.show(len(marks))
+        idle_at = running_time()
+
+    # 1초 동안 조용하면 한 글자가 끝난 것으로 본다
+    if marks and running_time() - idle_at > 1000:
+        code = "".join(marks)
+        print("글자 완성:", code)
+        display.scroll(code, delay=90)
+        marks = []
+        display.show(Image.ARROW_W)
+
+    last = now
+    sleep(10)`,
+            hint: '🔌 <b>핀 탭</b>에서 P1 을 1 ↔ 0 으로 여러 번 바꿔 보세요. 짧게 바꾸면 점, 길게 두면 선입니다.',
+            desc: '신호가 유지된 <b>길이</b>로 점과 선을 구분하고, 조용한 시간이 길어지면 한 글자가 끝난 것으로 봅니다. 통신 규약을 직접 만드는 좋은 연습입니다.',
+            expect: "받음: ['.', '.', '.']\n글자 완성: ...",
+            nondeterministic: true
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -537,6 +617,392 @@ while True:
               ['<code>radio.receive_full()</code>', '(데이터, 신호 세기, 시각) 을 함께 받기'],
               ['<code>radio.reset()</code>', '설정을 기본값으로']
             ]
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 누가 보냈는지 적어 보내기', code: `from microbit import *
+import radio
+
+MY_ID = 1                 # 보드마다 다르게 (1, 2, 3 …)
+
+radio.on()
+radio.config(group=7)
+display.show(MY_ID)
+
+while True:
+    if button_a.was_pressed():
+        msg = str(MY_ID) + ":HELLO"
+        radio.send(msg)
+        print("보냄:", msg)
+
+    got = radio.receive()
+    if got and ":" in got:
+        sender, text = got.split(":", 1)
+        if int(sender) != MY_ID:                 # 내가 보낸 건 무시
+            print(sender, "번에게서:", text)
+            display.scroll(sender + " " + text, delay=70)
+            display.show(MY_ID)
+
+    sleep(40)`,
+            hint: '📡 <b>무선 탭</b>의 입력 칸에 <code>2:HI</code> 처럼 넣어 보세요.',
+            desc: 'radio 는 <b>누가 보냈는지 알려 주지 않습니다</b>. 그래서 메시지 앞에 번호를 붙이는 <b>규약</b>을 직접 만들어야 합니다. <code>split(":", 1)</code> 은 첫 번째 콜론에서만 나눠 본문에 콜론이 있어도 안전합니다.',
+            expect: '2 번에게서: HI',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 신호가 얼마나 센가 (거리 가늠)', code: `from microbit import *
+import radio
+
+radio.on()
+radio.config(group=7, power=7)
+display.show(Image.ARROW_E)
+
+while True:
+    if button_a.was_pressed():
+        radio.send("PING")
+
+    full = radio.receive_full()
+    if full:
+        data, rssi, when = full
+        text = str(data, "utf-8")
+        print(text, "/ 신호 세기:", rssi, "dBm")
+
+        # -40(아주 가까움) ~ -95(아주 멈)
+        level = max(0, min(4, (rssi + 95) * 5 // 55))
+        display.clear()
+        for y in range(level + 1):
+            for x in range(5):
+                display.set_pixel(x, 4 - y, 9)
+        sleep(500)
+        display.show(Image.ARROW_E)
+
+    sleep(40)`,
+            hint: '📡 무선 탭에서 짝 보드를 “그대로 되돌려줌” 으로 두고 A 를 눌러 보세요.',
+            desc: '<code>receive_full()</code> 은 <b>(내용, 신호 세기, 시각)</b> 세 가지를 함께 돌려줍니다. 신호 세기(RSSI)는 음수이고 <b>0 에 가까울수록 가깝습니다</b>. 실제 보드 두 대를 멀리 떨어뜨리며 막대가 줄어드는 것을 확인해 보세요.',
+            expect: 'PING / 신호 세기: -50 dBm',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 잘 받았다고 답장하기 (ACK)', code: `from microbit import *
+import radio
+
+MY_ID = 1
+radio.on()
+radio.config(group=7)
+
+waiting = None
+sent_at = 0
+seq = 0
+
+display.show(Image.ARROW_E)
+
+while True:
+    # A: 번호를 붙여 보내고 답장을 기다린다
+    if button_a.was_pressed() and waiting is None:
+        seq = seq + 1
+        waiting = seq
+        sent_at = running_time()
+        radio.send("MSG:" + str(MY_ID) + ":" + str(seq))
+        display.show(Image.ARROW_E)
+        print("보냄 #" + str(seq))
+
+    got = radio.receive()
+    if got:
+        parts = got.split(":")
+        if parts[0] == "MSG":
+            # 받았으면 바로 답장
+            radio.send("ACK:" + parts[1] + ":" + parts[2])
+            display.show(Image.ARROW_W)
+            print("받고 답장 #" + parts[2])
+            sleep(200)
+        elif parts[0] == "ACK" and waiting is not None and int(parts[2]) == waiting:
+            rtt = running_time() - sent_at
+            print("답장 확인 #" + parts[2], "/ 왕복", rtt, "ms")
+            display.show(Image.YES)
+            waiting = None
+            sleep(400)
+
+    # 1초 안에 답장이 없으면 실패로 본다
+    if waiting is not None and running_time() - sent_at > 1000:
+        print("답장 없음 #" + str(waiting))
+        display.show(Image.NO)
+        waiting = None
+        sleep(400)
+
+    display.show(Image.ARROW_E) if waiting is None else None
+    sleep(40)`,
+            hint: '📡 무선 탭에서 짝 보드를 “그대로 되돌려줌” 으로 두면 자기 메시지가 돌아와 ACK 흐름을 볼 수 있습니다.',
+            desc: '무선은 메시지가 <b>사라질 수 있습니다</b>. 받은 쪽이 “잘 받았다(ACK)” 고 답장하고, 보낸 쪽은 일정 시간 안에 답장이 없으면 실패로 처리합니다. 인터넷의 TCP 도 같은 아이디어를 씁니다.',
+            expect: '보냄 #1\n받고 답장 #1\n답장 확인 #1 / 왕복 24 ms',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 여러 대로 함께' },
+          { type: 'p', html: 'radio 는 <b>여러 대가 있을 때</b> 진가를 발휘합니다. 시뮬레이터에서는 📡 무선 탭의 가상 짝 보드로 흐름을 확인하고, 교실에서는 조별로 <code>group</code> 번호를 정해 실제로 해 보세요.' },
+          {
+            type: 'code', title: '응용 예제 13-1. 무선 채팅방', code: `from microbit import *
+import radio
+import music
+
+MY_ID = 1                 # 보드마다 다르게!
+GROUP = 7
+
+WORDS = ["HI", "OK", "NO", "WAIT", "HELP", "BYE", "GOOD", "?"]
+index = 0
+
+radio.on()
+radio.config(group=GROUP)
+
+display.scroll("ID" + str(MY_ID), delay=60)
+display.scroll(WORDS[index], delay=70)
+
+while True:
+    # A: 보낼 말 고르기
+    if button_a.was_pressed():
+        index = (index + 1) % len(WORDS)
+        display.scroll(WORDS[index], delay=70)
+
+    # B: 보내기
+    if button_b.was_pressed():
+        radio.send(str(MY_ID) + ">" + WORDS[index])
+        display.show(Image.ARROW_E)
+        music.pitch(900, 60)
+        sleep(300)
+        display.scroll(WORDS[index], delay=70)
+
+    # 받기
+    got = radio.receive()
+    if got and ">" in got:
+        sender, text = got.split(">", 1)
+        if sender != str(MY_ID):
+            display.show(Image.ARROW_W)
+            music.pitch(600, 60)
+            sleep(200)
+            display.scroll(sender + " " + text, delay=75)
+            print(sender, "번:", text)
+
+    sleep(40)`,
+            desc: '조별로 <code>GROUP</code> 을 같게, <code>MY_ID</code> 를 다르게 설정하면 <b>여러 대가 대화</b>할 수 있습니다. 받은 메시지는 보낸 사람 번호와 함께 흐르고, 보낼 때와 받을 때 소리가 달라 구분됩니다.',
+            expect: 'A 로 말을 고르고 B 로 보내면, 다른 보드에 그 말이 뜹니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 13-2. 무선 센서 네트워크', code: `from microbit import *
+import radio
+import log
+
+# A 를 누른 채 켜면 '수집기', 아니면 '측정기'
+IS_HUB = button_a.is_pressed()
+MY_ID = 2                  # 측정기마다 다르게
+INTERVAL = 3000
+
+radio.on()
+radio.config(group=7)
+
+display.scroll("HUB" if IS_HUB else "NODE" + str(MY_ID), delay=55)
+
+if IS_HUB:
+    log.set_labels("node", "temp", "light", timestamp=log.SECONDS)
+    seen = {}
+
+    while True:
+        got = radio.receive()
+        if got and got.startswith("D:"):
+            parts = got.split(":")
+            node, temp, light = parts[1], int(parts[2]), int(parts[3])
+            seen[node] = temp
+            log.add(node=node, temp=temp, light=light)
+            print(node, "번 →", temp, "도 /", light)
+            display.show(Image.ARROW_W)
+            sleep(200)
+
+        if button_b.was_pressed():
+            print("연결된 측정기:", seen)
+            display.scroll(str(len(seen)) + "N", delay=80)
+
+        display.show(len(seen) % 10)
+        sleep(60)
+else:
+    next_send = running_time()
+    while True:
+        if running_time() >= next_send:
+            msg = "D:" + str(MY_ID) + ":" + str(temperature()) + ":" + str(display.read_light_level())
+            radio.send(msg)
+            print("보냄:", msg)
+            next_send = next_send + INTERVAL
+            display.show(Image.ARROW_E)
+            sleep(200)
+        display.show(MY_ID)
+        sleep(60)`,
+            hint: '📡 무선 탭 입력 칸에 <code>D:3:26:150</code> 처럼 넣으면 수집기 동작을 확인할 수 있습니다.',
+            desc: '한 대는 <b>수집기(hub)</b>, 나머지는 <b>측정기(node)</b> 가 되어 교실 여러 곳의 온도와 밝기를 한곳에 모읍니다. 켤 때 A 를 누르고 있으면 수집기가 됩니다. 수집기는 받은 값을 모두 로그에 남기므로 CSV 로 받아 비교할 수 있습니다.',
+            expect: '3 번 → 26 도 / 150',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 13-3. 무선 리모컨 (서보 조종)', code: `from microbit import *
+import radio
+
+# A 를 누른 채 켜면 '리모컨', 아니면 '수신기(서보)'
+IS_REMOTE = button_a.is_pressed()
+
+radio.on()
+radio.config(group=7)
+display.scroll("TX" if IS_REMOTE else "RX", delay=55)
+
+if IS_REMOTE:
+    last = -1
+    while True:
+        x = accelerometer.get_x()
+        angle = scale(x, from_=(-1024, 1024), to=(0, 180))
+
+        if abs(angle - last) > 4:            # 조금이라도 움직였을 때만
+            radio.send("S:" + str(angle))
+            last = angle
+            print("각도 전송:", angle)
+
+        # 화면에 지금 각도 표시
+        display.clear()
+        display.set_pixel(scale(angle, from_=(0, 180), to=(0, 4)), 2, 9)
+        sleep(80)
+else:
+    pin0.set_analog_period(20)
+
+    def servo(a):
+        a = max(0, min(180, int(a)))
+        pin0.write_analog(26 + (a * 102) // 180)
+
+    servo(90)
+    while True:
+        got = radio.receive()
+        if got and got.startswith("S:"):
+            angle = int(got[2:])
+            servo(angle)
+            display.clear()
+            display.set_pixel(scale(angle, from_=(0, 180), to=(0, 4)), 2, 9)
+            print("각도 수신:", angle)
+        sleep(20)`,
+            hint: '🧩 수신기 쪽에 <b>서보 모터 → P0</b>. 📡 무선 탭 입력 칸에 <code>S:45</code> 처럼 넣어도 됩니다.',
+            desc: '리모컨 보드를 <b>기울이면</b> 수신기의 서보가 따라 움직입니다. 값이 조금이라도 바뀔 때만 보내 무선 트래픽을 아꼈습니다. 바퀴 두 개를 달면 무선 자동차가 됩니다.',
+            expect: '각도 전송: 45 / 각도 수신: 45',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 13-4. 여러 대가 동시에 시작하는 스톱워치', code: `from microbit import *
+import radio
+import music
+
+radio.on()
+radio.config(group=7)
+
+running = False
+start = 0
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    # A: 모두에게 시작 신호 (자기 자신도 시작)
+    if button_a.was_pressed():
+        radio.send("GO")
+        running = True
+        start = running_time()
+        music.pitch(1200, 80)
+
+    # B: 모두에게 정지 신호
+    if button_b.was_pressed():
+        radio.send("STOP")
+        if running:
+            running = False
+            display.scroll(str((running_time() - start) // 100), delay=70)
+        music.pitch(500, 80)
+
+    got = radio.receive()
+    if got == "GO" and not running:
+        running = True
+        start = running_time()
+        music.pitch(1200, 80)
+    elif got == "STOP" and running:
+        running = False
+        ms = running_time() - start
+        print("기록:", ms, "ms")
+        display.scroll(str(ms // 100), delay=70)
+
+    if running:
+        display.show(Image.ALL_CLOCKS[(running_time() // 120) % 12])
+    else:
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(40)`,
+            hint: '📡 무선 탭 입력 칸에 <code>GO</code> 와 <code>STOP</code> 을 넣어 보세요.',
+            desc: '한 대에서 A 를 누르면 <b>모든 보드가 동시에</b> 시간을 재기 시작합니다. 육상 경기의 출발 신호처럼 쓸 수 있고, 여러 지점에서 같은 시각을 재야 하는 실험에도 유용합니다.',
+            expect: 'GO 를 받으면 모든 보드의 시계가 동시에 돌기 시작합니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 13-5. 무선 퀴즈 버저 (여러 명)', code: `from microbit import *
+import radio
+import music
+
+MY_ID = 1                  # 참가자마다 다르게
+IS_HOST = button_b.is_pressed()    # B 를 누른 채 켜면 사회자
+
+radio.on()
+radio.config(group=7)
+display.scroll("HOST" if IS_HOST else str(MY_ID), delay=55)
+
+if IS_HOST:
+    while True:
+        if button_a.was_pressed():
+            radio.send("OPEN")
+            display.show(Image("99999:99999:99999:99999:99999"))
+            music.pitch(1200, 100)
+            t0 = running_time()
+            winner = None
+
+            while running_time() - t0 < 6000 and winner is None:
+                got = radio.receive()
+                if got and got.startswith("BUZZ:"):
+                    winner = got.split(":")[1]
+                sleep(10)
+
+            radio.send("CLOSE")
+            if winner:
+                ms = running_time() - t0
+                print(winner, "번이", ms, "ms 에 눌렀습니다")
+                display.scroll(winner, delay=80)
+                music.play(music.POWER_UP)
+            else:
+                display.scroll("NONE", delay=70)
+                music.play(music.WAWAWAWAA)
+
+            display.show(Image.ARROW_E)
+        sleep(40)
+else:
+    open_now = False
+    while True:
+        got = radio.receive()
+        if got == "OPEN":
+            open_now = True
+            display.show(Image.ARROW_N)
+            music.pitch(900, 60)
+        elif got == "CLOSE":
+            open_now = False
+            display.show(str(MY_ID))
+
+        if open_now and button_a.was_pressed():
+            radio.send("BUZZ:" + str(MY_ID))
+            open_now = False
+            display.show(Image.YES)
+            music.pitch(1400, 120)
+            sleep(600)
+            display.show(str(MY_ID))
+
+        sleep(20)`,
+            hint: '📡 무선 탭 입력 칸에 <code>OPEN</code> · <code>BUZZ:3</code> 을 넣어 흐름을 확인해 보세요.',
+            desc: '사회자가 문제를 열면(<code>OPEN</code>) 참가자들이 버튼을 누를 수 있고, <b>가장 먼저 도착한 신호</b>의 번호가 승자가 됩니다. 사회자 보드는 켤 때 B 를 누르고 있으면 됩니다. 반 전체가 함께하는 퀴즈 대회에 바로 쓸 수 있습니다.',
+            expect: 'OPEN 뒤 먼저 누른 참가자 번호가 사회자 화면에 뜹니다.',
+            nondeterministic: true
           },
 
           { type: 'h', text: '2교시 · 13장 요약' },
