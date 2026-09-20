@@ -232,6 +232,67 @@ pin1.get_mode()`,
           },
           { type: 'callout', kind: 'board', title: '전류 제한', html: '<p>micro:bit 의 핀은 <b>많은 전류를 낼 수 없습니다</b>.</p><ul><li>핀 하나: 최대 <b>5mA</b> 정도 (LED 1개면 충분)</li><li>3V 단자 전체: 최대 <b>90mA</b></li></ul><p>모터, 여러 개의 LED, 전구 등을 직접 연결하면 안 됩니다. <b>트랜지스터 · 모터 드라이버 · 릴레이</b>를 통해 별도 전원으로 구동해야 합니다.</p>' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 핀이 지금 어떤 모드인지 보기', code: `from microbit import *
+
+print("처음:", pin0.get_mode())
+
+pin0.write_digital(1)
+print("digital 출력 뒤:", pin0.get_mode())
+
+pin0.write_analog(512)
+print("analog 출력 뒤:", pin0.get_mode())
+
+pin1.read_digital()
+print("P1 읽은 뒤:", pin1.get_mode(), "/ 풀 저항:", pin1.get_pull())
+
+display.scroll("SEE PIN TAB", delay=70)`,
+            hint: '실행한 뒤 오른쪽 <b>🔌 핀</b> 탭의 표와 비교해 보세요.',
+            desc: '<code>get_mode()</code> 는 그 핀이 지금 <b>입력인지 출력인지</b>를 알려 줍니다. 핀이 예상과 다르게 동작할 때 가장 먼저 확인할 것입니다.',
+            expect: "처음: unused\ndigital 출력 뒤: write_digital\nanalog 출력 뒤: write_analog\nP1 읽은 뒤: read_digital / 풀 저항: 2"
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 안쪽 화면과 바깥 LED 를 함께', code: `from microbit import *
+
+while True:
+    for i in range(5):
+        # 안쪽 LED 화면: 왼쪽에서 오른쪽으로
+        display.clear()
+        for y in range(5):
+            display.set_pixel(i, y, 9)
+        # 바깥 LED: 가운데 칸일 때만 켜기
+        pin0.write_digital(1 if i == 2 else 0)
+        sleep(180)`,
+            hint: '🧩 <b>부품 탭</b>에서 LED 를 P0 에 연결하세요.',
+            desc: '보드 안의 화면과 바깥 부품을 <b>같은 반복 안에서</b> 함께 다룹니다. 피지컬 컴퓨팅에서 아주 흔한 형태입니다.',
+            expect: '세로줄이 지나가고, 가운데를 지날 때 바깥 LED 가 켜집니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 패턴을 표로 적어 두고 재생하기', code: `from microbit import *
+
+PINS = [pin0, pin1, pin2]
+
+# 1 = 켜기, 0 = 끄기 (세 개 LED 의 시간표)
+PATTERN = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [0, 1, 0],
+    [1, 0, 1],
+    [0, 0, 0],
+]
+
+while True:
+    for step in PATTERN:
+        for i in range(3):
+            PINS[i].write_digital(step[i])
+        sleep(250)`,
+            hint: '🧩 LED 3개를 P0 · P1 · P2 에 연결하세요.',
+            desc: '켜고 끄는 순서를 <b>표(리스트의 리스트)</b>로 적어 두면, 코드를 고치지 않고 <code>PATTERN</code> 만 바꿔 다른 연출을 만들 수 있습니다. 전광판이나 조명 쇼를 만들 때 쓰는 방법입니다.',
+            expect: 'LED 3개가 표에 적힌 순서대로 켜졌다 꺼집니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -482,6 +543,73 @@ while True:
             hint: '🧩 버튼을 P1 에 연결하고 여러 번 눌러 보세요.',
             desc: '<b>값이 바뀌는 순간</b>만 세고, 그 뒤 잠깐 쉬어(디바운스) 채터링을 막습니다. <code>last</code> 변수가 <b>직전 상태</b>를 기억합니다. 이것은 <code>was_pressed()</code> 가 내부에서 하는 일과 비슷합니다.',
             expect: '버튼을 누를 때마다 숫자가 정확히 1씩 올라갑니다.'
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 풀 저항을 바꿔 가며 값 보기', code: `from microbit import *
+
+for name, pull in [("PULL_UP", pin1.PULL_UP),
+                   ("PULL_DOWN", pin1.PULL_DOWN),
+                   ("NO_PULL", pin1.NO_PULL)]:
+    pin1.set_pull(pull)
+    sleep(100)
+    values = [pin1.read_digital() for i in range(10)]
+    print(name, "→", values)
+    display.scroll(name[5], delay=80)
+
+pin1.set_pull(pin1.PULL_UP)
+display.show(Image.YES)`,
+            hint: '🧩 부품 탭에서 <b>아무것도 연결하지 않은 채</b> 먼저 실행하고, 그다음 버튼을 P1 에 연결해 다시 실행해 보세요.',
+            desc: '아무것도 연결하지 않은 핀을 10번씩 읽어 봅니다. 풀업은 계속 <code>1</code>, 풀다운은 계속 <code>0</code> 이지만 <b>NO_PULL 은 값이 정해지지 않습니다</b>. 왜 풀 저항이 필요한지 눈으로 확인할 수 있습니다.',
+            expect: 'PULL_UP → [1, 1, 1, …]\nPULL_DOWN → [0, 0, 0, …]\nNO_PULL → […]',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 스위치 두 개로 네 가지 상태', code: `from microbit import *
+
+pin1.set_pull(pin1.PULL_UP)
+pin2.set_pull(pin2.PULL_UP)
+
+FACES = [Image.HAPPY, Image.SAD, Image.ANGRY, Image.ASLEEP]
+
+while True:
+    # 누르면 0 이므로 뒤집어서 0/1 로 만든다
+    a = 1 - pin1.read_digital()
+    b = 1 - pin2.read_digital()
+    state = a * 2 + b                 # 00 01 10 11 → 0 1 2 3
+
+    display.show(FACES[state])
+    print("P1:", a, "P2:", b, "→ 상태", state)
+    sleep(300)`,
+            hint: '🧩 <b>토글 스위치</b> 두 개를 P1 · P2 에 연결하고 켜고 꺼 보세요.',
+            desc: '스위치 2개로 <b>2<sup>2</sup> = 4가지</b> 상태를 만들 수 있습니다. <code>a * 2 + b</code> 는 두 개의 0/1 을 하나의 숫자로 합치는 <b>2진수</b> 계산입니다. 스위치가 3개면 8가지가 됩니다.',
+            expect: 'P1: 0 P2: 0 → 상태 0\nP1: 1 P2: 0 → 상태 2 …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 바깥 버튼으로 LED 토글하기', code: `from microbit import *
+
+pin1.set_pull(pin1.PULL_UP)
+on = False
+last = 1
+
+pin0.write_digital(0)
+display.show(Image.NO)
+
+while True:
+    now = pin1.read_digital()
+    # 1 → 0 (누르는 순간)에만 뒤집는다
+    if last == 1 and now == 0:
+        on = not on
+        pin0.write_digital(1 if on else 0)
+        display.show(Image.YES if on else Image.NO)
+        sleep(50)
+    last = now
+    sleep(20)`,
+            hint: '🧩 LED 를 P0, 버튼을 P1(GND) 에 연결하세요.',
+            desc: '<b>누르는 순간</b>에만 상태를 뒤집습니다. <code>on = not on</code> 은 <code>True</code> ↔ <code>False</code> 를 오가는 <b>토글</b> 방법으로, 앞으로 아주 자주 씁니다.',
+            expect: '바깥 버튼을 누를 때마다 LED 가 켜졌다 꺼집니다.'
           },
 
           { type: 'h', text: '2교시 요약' },
@@ -791,6 +919,219 @@ while True:
             expect: '보드를 좌우로 기울이면 서보 각도가 0~180° 로 바뀝니다.'
           },
           { type: 'callout', kind: 'board', title: '모터에는 별도 전원을', html: '서보 모터는 순간적으로 <b>수백 mA</b> 를 씁니다. micro:bit 의 3V 단자로는 부족해 보드가 재부팅되거나 불안정해질 수 있습니다. 실제로는 <b>AA 건전지 팩</b> 등 별도 전원을 서보에 주고, <b>GND 만 micro:bit 와 연결</b>(공통 접지)하세요.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 값이 흔들릴 때 — 여러 번 읽어 평균내기', code: `from microbit import *
+
+
+def read_avg(pin, n=8):
+    """n 번 읽어 평균을 낸다 (값이 훨씬 안정된다)"""
+    total = 0
+    for i in range(n):
+        total = total + pin.read_analog()
+        sleep(2)
+    return total // n
+
+
+while True:
+    raw = pin0.read_analog()
+    avg = read_avg(pin0)
+    print("한 번:", raw, " / 평균:", avg, " / 차이:", abs(raw - avg))
+    sleep(400)`,
+            hint: '🧩 부품 탭에서 <b>가변저항</b>을 P0 에 연결하고 가만히 두어 보세요.',
+            desc: '아날로그 값은 조금씩 흔들립니다. <b>여러 번 읽어 평균</b>을 내면 훨씬 안정된 값을 얻을 수 있습니다. 센서를 다룰 때 거의 항상 쓰는 기법입니다.',
+            expect: '한 번: 512  / 평균: 510  / 차이: 2',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. PWM 주기를 바꿔 보기', code: `from microbit import *
+
+# 같은 듀티(50%)라도 주기가 다르면 쓰임이 달라진다
+for ms, note in [(20, "서보용 20ms"), (1, "LED용 1ms"), (0.5, "소리용 0.5ms")]:
+    print(note, "→ 주기", int(ms * 1000), "us")
+    pin0.set_analog_period_microseconds(int(ms * 1000))
+    pin0.write_analog(512)
+    display.scroll(str(ms), delay=80)
+    sleep(800)
+
+pin0.write_analog(0)
+display.show(Image.YES)`,
+            hint: '🧩 P0 에 <b>부저</b>를 연결하면 주기에 따라 소리가 달라지는 것을 들을 수 있습니다.',
+            desc: '듀티 비(50%)는 그대로인데 <b>주기</b>만 바꿨습니다. 주기가 길면(20ms) 서보 신호, 짧으면(0.5ms = 2000Hz) 소리가 됩니다. 같은 PWM 이 용도에 따라 다르게 쓰이는 이유입니다.',
+            expect: '서보용 20ms → 주기 20000 us\nLED용 1ms → 주기 1000 us\n소리용 0.5ms → 주기 500 us'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 두 아날로그 입력 비교하기', code: `from microbit import *
+
+while True:
+    left = pin1.read_analog()
+    right = pin2.read_analog()
+    diff = left - right
+
+    display.clear()
+    if abs(diff) < 60:
+        display.show(Image.DIAMOND_SMALL)       # 거의 같음
+    elif diff > 0:
+        display.show(Image.ARROW_W)             # 왼쪽이 큼
+    else:
+        display.show(Image.ARROW_E)             # 오른쪽이 큼
+
+    print("L:", left, " R:", right, " 차이:", diff)
+    sleep(250)`,
+            hint: '🧩 <b>조도 센서</b>(또는 가변저항) 두 개를 P1 · P2 에 연결하고 값을 다르게 움직여 보세요.',
+            desc: '센서 두 개의 <b>차이</b>를 보면 “어느 쪽이 더 밝은가 · 기울었는가” 를 알 수 있습니다. 라인 트레이서 로봇이 길을 따라가는 원리와 같습니다.',
+            expect: 'L: 700  R: 300  차이: 400',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 진짜 장치 만들기' },
+          { type: 'p', html: '핀 입출력을 모아 실제로 쓸 수 있는 장치를 만들어 봅니다. 각 예제 위의 <b>연결</b> 안내대로 🧩 부품 탭에서 부품을 붙인 뒤 실행하세요.' },
+          {
+            type: 'code', title: '응용 예제 5-1. 가변저항 밝기 조절 조명', code: `from microbit import *
+
+# 연결: 가변저항 → P1, LED → P0
+full = Image("99999:99999:99999:99999:99999")
+last_shown = -1
+
+while True:
+    v = pin1.read_analog()            # 0 ~ 1023
+    pin0.write_analog(v)              # 그대로 LED 밝기로
+
+    level = scale(v, from_=(0, 1023), to=(0, 9))
+    if level != last_shown:           # 값이 바뀔 때만 화면 갱신
+        display.show(full * (level / 9))
+        print("밝기", level, "/ 9  (원래 값", v, ")")
+        last_shown = level
+
+    sleep(40)`,
+            hint: '🧩 <b>가변저항 → P1</b>, <b>LED → P0</b>',
+            desc: '입력을 읽어 그대로 출력으로 보내는 가장 단순한 장치입니다. <code>last_shown</code> 으로 <b>값이 바뀔 때만</b> 화면을 고쳐 깜빡임을 없앴습니다.',
+            expect: '가변저항을 돌리면 LED 와 화면 밝기가 함께 바뀝니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 5-2. 자동 야간등', code: `from microbit import *
+
+# 연결: 조도 센서 → P1, LED → P0
+DARK = 400              # 이보다 어두우면 켜기 시작
+FADE = 30               # 한 번에 바뀌는 밝기 (부드럽게)
+
+now = 0                 # 지금 LED 밝기
+
+while True:
+    light = pin1.read_analog()
+    target = 0 if light > DARK else scale(DARK - light, from_=(0, DARK), to=(0, 1023))
+
+    # 목표 밝기로 서서히 따라간다
+    if now < target:
+        now = min(target, now + FADE)
+    elif now > target:
+        now = max(target, now - FADE)
+
+    pin0.write_analog(now)
+    display.show(Image.ASLEEP if now == 0 else Image.SQUARE_SMALL)
+    sleep(40)`,
+            hint: '🧩 <b>조도 센서 → P1</b>, <b>LED → P0</b>. 조도 슬라이더를 천천히 내려 보세요.',
+            desc: '어두울수록 밝게 켜지되, <b>한 번에 확 바뀌지 않고 서서히</b> 따라갑니다. 구름이 지나갈 때마다 깜빡이지 않도록 하는 실제 조명 제어 기법입니다.',
+            expect: '어두워지면 LED 가 부드럽게 밝아집니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 5-3. 가변저항으로 돌리는 서보', code: `from microbit import *
+
+# 연결: 가변저항 → P1, 서보 → P0
+pin0.set_analog_period(20)
+
+
+def servo(angle):
+    angle = max(0, min(180, int(angle)))
+    pin0.write_analog(26 + (angle * 102) // 180)
+
+
+last = -1
+
+while True:
+    v = pin1.read_analog()
+    angle = scale(v, from_=(0, 1023), to=(0, 180))
+
+    if abs(angle - last) > 2:        # 조금이라도 움직였을 때만
+        servo(angle)
+        display.show(str(angle // 20))
+        print("각도:", angle)
+        last = angle
+
+    sleep(40)`,
+            hint: '🧩 <b>가변저항 → P1</b>, <b>서보 모터 → P0</b>',
+            desc: '가변저항을 돌리면 서보가 따라 돕니다. 로봇 팔, 카메라 각도 조절, 수문 제어 같은 데 쓰이는 기본 구조입니다. <code>abs(angle - last) &gt; 2</code> 로 <b>떨림</b>을 막았습니다.',
+            expect: '가변저항을 돌리면 서보가 0°~180° 로 따라 움직입니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 5-4. 부저 테레민 (빛으로 연주)', code: `from microbit import *
+
+# 연결: 조도 센서 → P1, 부저 → P0
+MIN_HZ, MAX_HZ = 200, 1600
+
+display.show(Image.MUSIC_QUAVER)
+
+while True:
+    if button_a.is_pressed():
+        light = pin1.read_analog()
+        hz = scale(light, from_=(0, 1023), to=(MIN_HZ, MAX_HZ))
+        pin0.set_analog_period_microseconds(1000000 // hz)
+        pin0.write_analog(512)
+
+        level = scale(light, from_=(0, 1023), to=(0, 4))
+        display.clear()
+        display.set_pixel(2, 4 - level, 9)
+    else:
+        pin0.write_analog(0)
+        display.show(Image.MUSIC_QUAVER)
+
+    sleep(30)`,
+            hint: '🧩 <b>조도 센서 → P1</b>, <b>부저 → P0</b>. A 를 누른 채 조도 슬라이더를 움직이세요.',
+            desc: 'A 를 누르는 동안만 소리가 나고, 빛의 세기가 <b>음의 높이</b>가 됩니다. 실제 보드에서는 센서 위에서 손을 위아래로 움직여 연주합니다.',
+            expect: 'A 를 누른 채 빛을 바꾸면 소리 높이가 달라집니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 5-5. 보행자 버튼이 있는 신호등', code: `from microbit import *
+import music
+
+# 연결: 빨강 LED → P0, 노랑 → P1, 초록 → P2, 버튼 → P8(GND)
+pin8.set_pull(pin8.PULL_UP)
+
+RED, YELLOW, GREEN = pin0, pin1, pin2
+requested = False
+
+
+def lights(r, y, g, ms, mark):
+    """세 LED 를 정해진 상태로 두고 ms 만큼 기다린다 (그동안 버튼도 확인)"""
+    global requested
+    RED.write_digital(r)
+    YELLOW.write_digital(y)
+    GREEN.write_digital(g)
+    display.show(mark)
+    t0 = running_time()
+    while running_time() - t0 < ms:
+        if pin8.read_digital() == 0:
+            requested = True
+        sleep(20)
+
+
+while True:
+    lights(1, 0, 0, 4000 if not requested else 1500, "R")
+    requested = False
+    lights(0, 1, 0, 800, "Y")
+    lights(0, 0, 1, 3000, "G")
+    music.play(['c5:1', 'c', 'c'], wait=False)
+    lights(0, 1, 0, 800, "Y")`,
+            hint: '🧩 <b>LED 3개 → P0 · P1 · P2</b>(색은 red · yellow · green), <b>버튼 → P8</b>',
+            desc: '보행자 버튼을 누르면 <b>빨간불이 짧아집니다</b>. 기다리는 동안에도 버튼을 확인하려고 <code>sleep()</code> 대신 <code>running_time()</code> 비교를 썼습니다 — 실제 신호등 제어기와 같은 방식입니다.',
+            expect: '빨강 → 노랑 → 초록 → 노랑 을 반복하고, 버튼을 누르면 다음 빨간불이 짧아집니다.',
+            nondeterministic: true
+          },
 
           { type: 'h', text: '3교시 · 5장 요약' },
           {

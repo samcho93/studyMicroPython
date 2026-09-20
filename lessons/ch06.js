@@ -230,6 +230,74 @@ while True:
             ]
           },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 내장 멜로디 전부 들어 보기', code: `from microbit import *
+import music
+
+TUNES = [
+    ("DADADADUM", music.DADADADUM), ("ENTERTAINER", music.ENTERTAINER),
+    ("PRELUDE", music.PRELUDE), ("ODE", music.ODE),
+    ("NYAN", music.NYAN), ("RINGTONE", music.RINGTONE),
+    ("FUNK", music.FUNK), ("BLUES", music.BLUES),
+    ("BIRTHDAY", music.BIRTHDAY), ("WEDDING", music.WEDDING),
+    ("FUNERAL", music.FUNERAL), ("PUNCHLINE", music.PUNCHLINE),
+    ("PYTHON", music.PYTHON), ("BADDY", music.BADDY),
+    ("CHASE", music.CHASE), ("BA_DING", music.BA_DING),
+    ("WAWAWAWAA", music.WAWAWAWAA), ("JUMP_UP", music.JUMP_UP),
+    ("JUMP_DOWN", music.JUMP_DOWN), ("POWER_UP", music.POWER_UP),
+    ("POWER_DOWN", music.POWER_DOWN),
+]
+
+print("내장 멜로디:", len(TUNES), "개")
+
+for name, tune in TUNES:
+    display.scroll(name, delay=45)
+    music.play(tune)
+    sleep(400)
+
+display.show(Image.YES)`,
+            desc: '21가지를 이름과 함께 차례로 들려줍니다. 마음에 드는 것을 골라 게임 효과음으로 써 보세요. 도중에 멈추려면 <b>■ 정지</b>를 누르세요.',
+            expect: '내장 멜로디: 21 개\n(이름이 흐른 뒤 그 곡이 재생됩니다)'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 옥타브를 바꿔 들어 보기', code: `from microbit import *
+import music
+
+SCALE = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'c']
+
+for octave in [3, 4, 5, 6]:
+    display.show(octave)
+    # 첫 음에만 옥타브를 적으면 나머지가 따라온다
+    tune = [SCALE[0] + str(octave) + ':2'] + SCALE[1:]
+    print(octave, "옥타브:", tune)
+    music.play(tune)
+    sleep(400)
+
+display.clear()`,
+            desc: '같은 도레미를 옥타브만 바꿔 들어 봅니다. 한 옥타브 올라갈 때마다 <b>주파수가 2배</b>가 되어 훨씬 높게 들립니다. 3옥타브는 낮고 6옥타브는 아주 높습니다.',
+            expect: "3 옥타브: ['c3:2', 'd', 'e', 'f', 'g', 'a', 'b', 'c']\n(낮은 도레미 → 점점 높은 도레미)"
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 쉼표와 박자 실험', code: `from microbit import *
+import music
+
+display.scroll("NO REST", delay=60)
+music.play(['c4:2', 'c', 'c', 'c'])
+sleep(600)
+
+display.scroll("REST", delay=60)
+music.play(['c4:2', 'r', 'c', 'r', 'c', 'r', 'c'])
+sleep(600)
+
+display.scroll("LONG", delay=60)
+music.play(['c4:1', 'c:1', 'c:8', 'c:1', 'c:1', 'c:8'])
+
+display.clear()`,
+            desc: '같은 “도” 만 쓰는데도 <b>쉼표(<code>r</code>)</b>와 <b>길이</b>를 바꾸면 완전히 다른 리듬이 됩니다. 음의 높이만큼이나 리듬이 중요하다는 것을 느낄 수 있습니다.',
+            expect: '같은 음이 세 가지 리듬으로 연주됩니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -517,6 +585,286 @@ display.clear()`,
             expect: '같은 음이 점점 크게 네 번 연주됩니다.'
           },
           { type: 'callout', kind: 'board', title: '이어폰 연결하기', html: '악어클립으로 <b>P0 ↔ 이어폰 끝(팁)</b>, <b>GND ↔ 이어폰 몸통(슬리브)</b> 를 연결하면 이어폰으로 들을 수 있습니다. 교실에서 여러 명이 동시에 실습할 때 아주 유용합니다. 이때는 <code>speaker.off()</code> 로 내장 스피커를 꺼 두세요.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 주파수를 계산해서 음 만들기', code: `from microbit import *
+import music
+
+# 라(A4) = 440Hz 를 기준으로 반음씩 올린다
+NAMES = ["A", "A#", "B", "C", "D#", "E", "F", "F#", "G", "G#"]
+
+display.scroll("CALC", delay=60)
+
+for n in range(13):                     # 한 옥타브 = 반음 12개
+    hz = int(440 * (2 ** (n / 12)))     # 반음 하나 = 2의 12제곱근 배
+    print(n, "반음 위 →", hz, "Hz")
+    display.show(n % 10)
+    music.pitch(hz, 250)
+    sleep(80)
+
+display.clear()`,
+            desc: '반음 하나가 올라갈 때마다 주파수에 <code>2<sup>1/12</sup></code>(약 1.0595)를 곱합니다. 12번 곱하면 정확히 <b>2배</b>, 즉 한 옥타브가 됩니다. 수학과 음악이 만나는 지점입니다.',
+            expect: '0 반음 위 → 440 Hz\n1 반음 위 → 466 Hz\n…\n12 반음 위 → 880 Hz'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 화음처럼 들리게 하기', code: `from microbit import *
+import music
+
+
+def chord(freqs, ms):
+    """여러 음을 아주 빠르게 번갈아 내면 화음처럼 들린다"""
+    t0 = running_time()
+    while running_time() - t0 < ms:
+        for f in freqs:
+            music.pitch(f, 12)
+
+
+display.show(Image.MUSIC_QUAVER)
+
+chord([262, 330, 392], 1200)        # 도미솔 (C 장3화음)
+sleep(300)
+chord([262, 311, 392], 1200)        # 도미♭솔 (C 단3화음)
+sleep(300)
+chord([262, 330, 392, 523], 1500)   # 도미솔도
+
+display.clear()`,
+            desc: 'micro:bit 는 <b>한 번에 한 음</b>만 낼 수 있습니다. 하지만 아주 빠르게 번갈아 내면 사람 귀에는 <b>화음처럼</b> 들립니다. 밝은 장3화음과 어두운 단3화음의 차이를 느껴 보세요.',
+            expect: '세 가지 화음이 차례로 들립니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 소리에 맞춰 화면도 움직이기', code: `from microbit import *
+import music
+
+# (주파수, 화면에 켤 높이) 를 짝지어 둔다
+NOTES = [(262, 0), (294, 1), (330, 2), (349, 3),
+         (392, 4), (440, 3), (494, 2), (523, 1)]
+
+while True:
+    for hz, level in NOTES:
+        display.clear()
+        for x in range(5):
+            display.set_pixel(x, 4 - level, 9)
+        music.pitch(hz, 220)
+    sleep(300)`,
+            desc: '음이 높을수록 화면의 줄도 위로 올라갑니다. 소리를 <b>눈으로도</b> 볼 수 있어 음의 높낮이를 이해하는 데 도움이 됩니다.',
+            expect: '음이 올라가면 가로줄도 위로 올라갑니다.'
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 소리로 만드는 것들' },
+          { type: 'p', html: '악기 · 작곡기 · 퀴즈까지, 소리를 중심으로 한 프로그램들입니다. <b>브라우저 음량</b>을 켜고 실행하세요.' },
+          {
+            type: 'code', title: '응용 예제 6-1. 다섯 음 피아노', code: `from microbit import *
+import music
+
+# (입력, 음, 화면)
+KEYS = [
+    ("A", 262, Image("90000:90000:90000:90000:90000")),      # 도
+    ("B", 330, Image("00900:00900:00900:00900:00900")),      # 미
+    ("AB", 392, Image("00009:00009:00009:00009:00009")),     # 솔
+    ("LOGO", 523, Image("99999:00000:00000:00000:00000")),   # 높은 도
+    ("P0", 220, Image("00000:00000:00000:00000:99999")),     # 낮은 라
+]
+
+display.show(Image.MUSIC_QUAVER)
+
+while True:
+    a = button_a.is_pressed()
+    b = button_b.is_pressed()
+
+    key = None
+    if a and b:
+        key = "AB"
+    elif a:
+        key = "A"
+    elif b:
+        key = "B"
+    elif pin_logo.is_touched():
+        key = "LOGO"
+    elif pin0.is_touched():
+        key = "P0"
+
+    if key:
+        for name, hz, picture in KEYS:
+            if name == key:
+                display.show(picture)
+                music.pitch(hz, 150)
+    else:
+        display.show(Image.MUSIC_QUAVER)
+
+    sleep(25)`,
+            desc: 'A · B · A+B · 로고 · P0 다섯 가지 입력을 건반으로 씁니다. 누른 건반에 따라 화면의 막대 위치도 달라져 어느 음인지 눈으로도 알 수 있습니다. 실제 보드에서는 P0 에 과일이나 알루미늄 포일을 붙여 보세요.',
+            expect: '버튼과 터치로 다섯 가지 음을 연주할 수 있습니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 6-2. 자동 작곡기', code: `from microbit import *
+import music
+import random
+
+SCALE = ['c4', 'd4', 'e4', 'g4', 'a4', 'c5']   # 5음 음계 (어떻게 섞어도 어울림)
+LENGTH = 8
+
+display.show(Image.MUSIC_QUAVER)
+
+while True:
+    if button_a.was_pressed():
+        # 무작위로 한 곡 만들기
+        song = []
+        for i in range(LENGTH):
+            note = random.choice(SCALE)
+            dur = random.choice([2, 2, 4, 4, 8])
+            song.append(note + ":" + str(dur))
+
+        print("만든 곡:", song)
+        display.show(Image.ALL_CLOCKS, delay=40)
+        music.play(song)
+        display.show(Image.MUSIC_QUAVER)
+
+    if button_b.was_pressed():
+        # 빠르기를 바꿔 본다
+        ticks, bpm = music.get_tempo()
+        bpm = 60 if bpm >= 240 else bpm + 60
+        music.set_tempo(ticks=4, bpm=bpm)
+        display.scroll(str(bpm), delay=70)
+        display.show(Image.MUSIC_QUAVER)
+
+    sleep(50)`,
+            desc: '<b>5음 음계</b>(펜타토닉)는 어떤 순서로 이어 붙여도 어울리게 들립니다. A 를 누를 때마다 새 곡이 만들어지고, B 로 빠르기를 바꿉니다. 마음에 드는 곡이 나오면 콘솔에서 복사해 두세요.',
+            expect: "만든 곡: ['e4:4', 'g4:2', 'c5:8', …]",
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 6-3. 멜로디 맞히기 퀴즈', code: `from microbit import *
+import music
+import random
+
+QUIZ = [
+    ("BIRTHDAY", music.BIRTHDAY),
+    ("ODE", music.ODE),
+    ("NYAN", music.NYAN),
+    ("WEDDING", music.WEDDING),
+]
+
+score = 0
+display.scroll("QUIZ", delay=60)
+
+while True:
+    answer = random.randint(0, len(QUIZ) - 1)
+    name, tune = QUIZ[answer]
+
+    display.show(Image.MUSIC_QUAVER)
+    music.play(tune)
+
+    # A 를 누를 때마다 보기가 바뀌고, B 로 정답 제출
+    pick = 0
+    display.show(pick)
+    while True:
+        if button_a.was_pressed():
+            pick = (pick + 1) % len(QUIZ)
+            display.show(pick)
+        if button_b.was_pressed():
+            break
+        if pin_logo.is_touched():        # 힌트: 한 번 더 듣기
+            music.play(tune)
+            display.show(pick)
+        sleep(40)
+
+    if pick == answer:
+        score = score + 1
+        display.show(Image.HAPPY)
+        music.play(music.POWER_UP)
+    else:
+        display.show(Image.SAD)
+        music.play(music.WAWAWAWAA)
+        display.scroll(name, delay=70)
+
+    display.scroll("S" + str(score), delay=80)
+    sleep(600)`,
+            desc: '곡을 들려주고 <b>0 ~ 3 번</b> 중에서 고르게 합니다. A 로 번호를 바꾸고 B 로 제출, 로고를 만지면 다시 들려줍니다. 곡 목록을 바꾸면 우리 반 전용 퀴즈가 됩니다.',
+            expect: '곡이 들린 뒤 번호를 고르면 정답 여부와 점수가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 6-4. 알람 시계', code: `from microbit import *
+import music
+
+ALARM_SEC = 10          # 몇 초 뒤에 울릴까 (수업에서는 짧게)
+armed = False
+alarm_at = 0
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    # A: 알람 켜기 / 끄기
+    if button_a.was_pressed():
+        armed = not armed
+        if armed:
+            alarm_at = running_time() + ALARM_SEC * 1000
+            display.show(Image.YES)
+            music.pitch(880, 100)
+        else:
+            display.show(Image.NO)
+        sleep(400)
+
+    # B: 남은 시간 보기
+    if button_b.was_pressed() and armed:
+        left = max(0, (alarm_at - running_time()) // 1000)
+        display.scroll(str(left), delay=70)
+
+    if armed and running_time() >= alarm_at:
+        # 알람! 아무 버튼이나 누를 때까지
+        while not (button_a.was_pressed() or button_b.was_pressed()):
+            display.show(Image("99999:99999:99999:99999:99999"))
+            music.play(music.RINGTONE, wait=False)
+            sleep(300)
+            display.clear()
+            sleep(200)
+        music.stop()
+        armed = False
+
+    # 평소 화면
+    if armed:
+        display.show(Image.ALL_CLOCKS[(running_time() // 200) % 12])
+    else:
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(50)`,
+            desc: 'A 로 알람을 걸고 B 로 남은 시간을 확인합니다. 울릴 때는 <code>wait=False</code> 로 소리를 내면서 <b>동시에</b> 화면을 깜빡이고 버튼도 확인합니다. <code>ALARM_SEC</code> 를 <code>300</code> 으로 바꾸면 5분 타이머가 됩니다.',
+            expect: 'A 로 알람을 걸면 시계가 돌고, 시간이 되면 울립니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 6-5. 기울기 연주 악기', code: `from microbit import *
+import music
+
+# 기울기를 8음계로 나눠 연주한다
+SCALE = [262, 294, 330, 349, 392, 440, 494, 523]
+
+display.show(Image.MUSIC_QUAVER)
+
+while True:
+    if pin_logo.is_touched():
+        x = accelerometer.get_x()
+        i = scale(x, from_=(-1024, 1024), to=(0, len(SCALE) - 1))
+        i = max(0, min(len(SCALE) - 1, i))
+
+        # 기울기 세기로 음의 길이를 바꾼다
+        y = accelerometer.get_y()
+        ms = scale(abs(y), from_=(0, 1024), to=(60, 200))
+
+        music.pitch(SCALE[i], ms)
+
+        display.clear()
+        display.set_pixel(i % 5, 4 - (i // 5) * 2, 9)
+        print("음", i, SCALE[i], "Hz /", ms, "ms")
+    else:
+        display.show(Image.MUSIC_QUAVER)
+        sleep(40)`,
+            hint: '🧭 <b>센서 탭</b>의 기울기 판을 끌면서 보드 그림의 <b>로고</b>를 누르고 있으세요.',
+            desc: '로고를 만지고 있는 동안만 소리가 나므로 <b>원하는 순간에만</b> 연주할 수 있습니다. 좌우 기울기가 음높이, 앞뒤 기울기가 음 길이입니다.',
+            expect: '로고를 만진 채 기울이면 8음계 중 하나가 연주됩니다.',
+            nondeterministic: true
+          },
 
           { type: 'h', text: '2교시 · 6장 요약' },
           {

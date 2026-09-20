@@ -170,6 +170,46 @@ while True:
           },
           { type: 'callout', kind: 'warn', title: '끝나지 않는 프로그램', html: '<code>while True:</code> 로 시작하는 프로그램은 <b>스스로 끝나지 않습니다</b>. 실제 micro:bit 에서는 전원을 뽑을 때까지 계속 돌아가는 것이 정상이고, 이 강좌에서는 오른쪽 위의 <b>■</b> 또는 콘솔의 <b>■ 중지</b> 버튼으로 멈춥니다.' },
 
+          { type: 'h', text: '더 해 보기' },
+          { type: 'p', html: '문법은 뒤에서 차근차근 배웁니다. 지금은 <b>실행해 보고 숫자를 바꿔 보는 것</b>만으로 충분합니다.' },
+          {
+            type: 'code', title: '더 해 보기 ①. 센서 값 들여다보기', code: `from microbit import *
+
+print("온도:", temperature(), "도")
+print("빛:", display.read_light_level())
+print("소리:", microphone.sound_level())
+print("기울기:", accelerometer.get_values())
+print("켜진 지:", running_time(), "밀리초")`,
+            desc: 'micro:bit 안에 어떤 센서가 들어 있는지 한 번에 확인해 봅니다. 결과는 LED 화면이 아니라 <b>아래 콘솔</b>에 나옵니다. 오른쪽 <b>🧭 센서</b> 탭에서 값을 바꾸고 다시 실행해 보세요.',
+            expect: '온도: 24 도\n빛: 128\n소리: 40\n기울기: (0, 0, -1024)\n켜진 지: 12 밀리초',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 화면 전체를 켜 보기', code: `from microbit import *
+
+display.show(Image("99999:99999:99999:99999:99999"))
+sleep(1000)
+display.show(Image("55555:55555:55555:55555:55555"))
+sleep(1000)
+display.show(Image("11111:11111:11111:11111:11111"))
+sleep(1000)
+display.clear()`,
+            desc: '숫자 <b>9</b> 는 가장 밝게, <b>1</b> 은 아주 희미하게, <b>0</b> 은 꺼짐입니다. LED 25개를 숫자로 적어 그림을 그리는 방법은 3장에서 자세히 배웁니다.',
+            expect: '화면 전체가 밝게 → 중간 → 희미하게 켜졌다 꺼집니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 소리도 내 보기', code: `from microbit import *
+import music
+
+display.show(Image.MUSIC_QUAVER)
+music.play(music.BA_DING)
+sleep(300)
+music.play(['c4:4', 'e', 'g', 'c5:8'])
+display.clear()`,
+            desc: '<b>브라우저 음량</b>을 켜 두세요. <code>music</code> 은 따로 <code>import</code> 해야 쓸 수 있습니다. 6장에서 자세히 배웁니다.',
+            expect: '“띠링” 소리 뒤에 도 · 미 · 솔 · 높은 도가 연주됩니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -367,6 +407,39 @@ len(name)`,
           { type: 'callout', kind: 'tip', title: '셸 사용 요령', html: '<ul><li><kbd>↑</kbd> <kbd>↓</kbd> 로 전에 입력한 줄을 다시 불러옵니다.</li><li><code>if</code> · <code>for</code> 처럼 <b>콜론(:)</b> 으로 끝나면 <code>...</code> 로 바뀝니다. 블록을 다 쓴 뒤 <b>빈 줄에서 Enter</b> 를 누르면 실행됩니다.</li><li><code>dir(display)</code> 를 입력하면 <code>display</code> 로 할 수 있는 일의 목록이 나옵니다.</li><li>셸에서 만든 변수는 ▶ 실행(main.py) 과 <b>따로</b> 관리됩니다.</li></ul>' },
           { type: 'callout', kind: 'board', html: '실제 micro:bit 에도 똑같은 셸이 들어 있습니다. USB 로 연결하고 <b>🔌 보드</b> 에서 연결한 뒤 같은 칸에 입력하면 <b>진짜 보드</b>가 대답합니다. 이것을 <b>REPL</b>(Read-Eval-Print Loop, 읽고 · 계산하고 · 출력하고 · 반복) 이라고 부릅니다.' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 편집기에서 값 바꿔 실행하기', code: `from microbit import *
+
+WAIT = 300          # ← 이 숫자만 바꿔 가며 실행해 보세요 (50, 1000 …)
+
+while True:
+    display.show(Image.SQUARE)
+    sleep(WAIT)
+    display.show(Image.SQUARE_SMALL)
+    sleep(WAIT)`,
+            desc: '자주 바꾸는 값은 <b>맨 위에 이름을 붙여</b> 두면 편합니다. <code>WAIT</code> 하나만 고치면 속도가 전부 바뀝니다. 앞으로 만들 프로그램에서도 이 습관이 큰 도움이 됩니다.',
+            expect: '네모가 커졌다 작아졌다를 반복합니다. (■ 정지로 멈춤)'
+          },
+          {
+            type: 'code', repl: true, title: '더 해 보기 ②. 셸로 시뮬레이터 조작해 보기', code: `display.set_pixel(0, 0, 9)
+display.set_pixel(4, 4, 9)
+display.get_pixel(0, 0)
+temperature()
+running_time()
+display.clear()`,
+            desc: '셸은 <b>한 줄씩 바로 확인</b>하는 곳입니다. 프로그램을 통째로 실행하지 않고 “이 명령이 뭘 하지?” 를 빠르게 알아볼 때 씁니다.',
+            expect: '>>> display.get_pixel(0, 0)\n9\n>>> temperature()\n24'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 오류를 일부러 내 보기', code: `from microbit import *
+
+display.show(Image.HEART)
+display.set_pixel(7, 2, 9)      # 좌표는 0~4 까지만!`, expectError: true,
+            desc: '오류는 무서운 것이 아니라 <b>어디가 잘못됐는지 알려 주는 힌트</b>입니다. 콘솔의 <code>line 4</code> 를 누르면 편집기의 그 줄로 바로 이동합니다. 아래 <b>💡 도움말</b> 도 확인해 보세요.',
+            expect: 'Traceback (most recent call last):\n  File "main.py", line 4, in <module>\n    display.set_pixel(7, 2, 9)\nValueError: index out of bounds'
+          },
+
           { type: 'h', text: '2교시 요약' },
           {
             type: 'list', items: [
@@ -559,6 +632,176 @@ while True:
             ]
           },
           { type: 'callout', kind: 'warn', title: 'LED 화면에 나타나는 오류 메시지', html: '실제 micro:bit 에서 프로그램에 오류가 있으면 <b>슬픈 얼굴</b>이 뜬 뒤 오류 내용이 글자로 흘러갑니다. 예: <code>NameError: name \'displey\' isn\'t defined</code>. 짧게 줄여서 보여 주므로, 자세한 내용은 이 강좌의 콘솔에서 확인하는 편이 훨씬 편합니다.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 내 보드 정보 확인하기', code: `from microbit import *
+import os
+import machine
+
+info = os.uname()
+print("시스템:", info.sysname)
+print("버전:", info.release)
+print("보드:", info.machine)
+print("고유 번호:", machine.unique_id())
+print("CPU 속도:", machine.freq(), "Hz")
+
+display.scroll(info.release, delay=70)`,
+            desc: '<code>os.uname()</code> 은 보드와 MicroPython 의 버전 정보를, <code>machine.unique_id()</code> 는 보드마다 다른 <b>고유 번호</b>를 알려 줍니다. 여러 대를 쓰는 교실에서 보드를 구분할 때 쓸 수 있습니다.',
+            expect: '시스템: microbit\n버전: 2.1.2\n보드: micro:bit with nRF52833\n…'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 전원이 켜질 때 인사하는 프로그램', code: `from microbit import *
+import music
+
+# 시작 인사 (한 번만)
+display.show(Image.ALL_CLOCKS, delay=60)
+music.play(music.POWER_UP)
+display.scroll("READY", delay=70)
+
+# 그 뒤로는 하트가 계속 뛴다
+display.show([Image.HEART, Image.HEART_SMALL], delay=250, loop=True)`,
+            desc: '실제 보드에 <code>main.py</code> 로 올리면 <b>전원을 넣을 때마다</b> 이 인사가 나옵니다. 건전지를 연결해 USB 없이도 동작하는지 확인해 보세요.',
+            expect: '시계 애니메이션 → 소리 → READY → 하트가 계속 뜁니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 메모리 얼마나 남았나', code: `from microbit import *
+import gc
+
+gc.collect()                      # 안 쓰는 메모리 정리
+free = gc.mem_free()
+used = gc.mem_alloc()
+
+print("쓴 메모리:", used, "바이트")
+print("남은 메모리:", free, "바이트")
+display.scroll(str(free // 1024) + "KB", delay=70)`,
+            desc: '실제 micro:bit 의 메모리는 아주 적습니다. 프로그램이 길어져 <code>MemoryError</code> 가 나면 이렇게 확인해 보세요. <code>gc.collect()</code> 는 안 쓰는 메모리를 정리합니다.',
+            expect: '쓴 메모리: 11600 바이트\n남은 메모리: 86704 바이트',
+            nondeterministic: true
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — micro:bit 로 할 수 있는 일 미리 보기' },
+          { type: 'p', html: '앞으로 배울 것들을 미리 맛보는 다섯 가지 프로그램입니다. <b>지금은 이해하지 못해도 괜찮습니다.</b> 실행해서 어떤 일이 일어나는지 보고, 숫자와 글자를 바꿔 가며 놀아 보세요. 각 프로그램 아래에 “몇 장에서 배우는지” 를 적어 두었습니다.' },
+          {
+            type: 'code', title: '응용 예제 1-1. 전광판 (3장 · 이미지)', code: `from microbit import *
+
+MESSAGE = "HELLO MICRO BIT "      # ← 내 문구로 바꿔 보세요
+
+while True:
+    display.scroll(MESSAGE, delay=90)
+    display.show(Image.HEART)
+    sleep(400)
+    display.show(Image.HEART_SMALL)
+    sleep(400)`,
+            desc: '글자가 흐른 뒤 하트가 두 번 뛰고 다시 반복합니다. <code>MESSAGE</code> 를 내 이름이나 반 이름으로 바꿔 보세요. (한글은 나오지 않으니 영문으로)',
+            expect: '문구가 흐른 뒤 하트가 깜빡이기를 반복합니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 1-2. 흔들어 뽑는 주사위 (7장 · 9장)', code: `from microbit import *
+import random
+import music
+
+DICE = [
+    Image("00000:00000:00900:00000:00000"),
+    Image("90000:00000:00000:00000:00009"),
+    Image("90000:00000:00900:00000:00009"),
+    Image("90009:00000:00000:00000:90009"),
+    Image("90009:00000:00900:00000:90009"),
+    Image("90009:00000:90009:00000:90009"),
+]
+
+display.show(Image.DIAMOND_SMALL)
+
+while True:
+    if accelerometer.was_gesture("shake"):
+        for i in range(8):
+            display.show(random.choice(DICE))
+            music.pitch(random.randint(400, 900), 30)
+            sleep(60)
+        n = random.randint(1, 6)
+        display.show(DICE[n - 1])
+        print("주사위:", n)
+    sleep(50)`,
+            hint: '🧭 <b>센서 탭</b>의 <b>흔들기</b> 버튼을 눌러 보세요. 실제 보드는 손에 쥐고 흔듭니다.',
+            desc: '보드를 흔들면 주사위가 굴러가다 멈춥니다. 보드게임에 바로 쓸 수 있습니다.',
+            expect: '흔들면 주사위 눈이 무작위로 정해집니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 1-3. 기울기로 굴리는 공 (8장 · 움직임)', code: `from microbit import *
+
+px, py = 2.0, 2.0
+vx, vy = 0.0, 0.0
+
+while True:
+    vx = (vx + accelerometer.get_x() / 500) * 0.9
+    vy = (vy + accelerometer.get_y() / 500) * 0.9
+    px = px + vx
+    py = py + vy
+
+    if px < 0:
+        px, vx = 0, -vx * 0.5
+    if px > 4:
+        px, vx = 4, -vx * 0.5
+    if py < 0:
+        py, vy = 0, -vy * 0.5
+    if py > 4:
+        py, vy = 4, -vy * 0.5
+
+    display.clear()
+    display.set_pixel(int(px + 0.5), int(py + 0.5), 9)
+    sleep(50)`,
+            hint: '🧭 <b>센서 탭</b>의 기울기 판을 마우스로 끌어 보세요.',
+            desc: '보드를 기울이면 점이 그 방향으로 굴러가고 벽에 부딪히면 튕깁니다. 게임의 기본이 되는 “물리” 계산입니다.',
+            expect: '기울인 방향으로 점이 굴러다닙니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 1-4. 소리에 반응하는 조명 (12장 · 소리)', code: `from microbit import *
+
+full = Image("99999:99999:99999:99999:99999")
+
+while True:
+    level = microphone.sound_level()        # 0 ~ 255
+    n = min(5, level // 45)                 # 0 ~ 5 칸
+
+    display.clear()
+    for y in range(n):
+        for x in range(5):
+            display.set_pixel(x, 4 - y, 9)
+    sleep(60)`,
+            hint: '🧭 <b>센서 탭</b>의 <b>소리</b> 슬라이더를 움직이거나 <b>👏 박수</b> 버튼을 눌러 보세요.',
+            desc: '소리가 클수록 화면이 아래에서부터 차오릅니다. 실제 보드에서는 손뼉을 치거나 “아~” 하고 소리를 내면 됩니다. 마이크는 V2 에만 있습니다.',
+            expect: '소리 크기에 따라 막대가 오르내립니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 1-5. 버튼으로 고르는 만능 도구 (4장 · 11장)', code: `from microbit import *
+
+MODES = ["TEMP", "LIGHT", "TIME"]
+mode = 0
+
+display.scroll(MODES[mode], delay=60)
+
+while True:
+    # A: 모드 바꾸기
+    if button_a.was_pressed():
+        mode = (mode + 1) % len(MODES)
+        display.scroll(MODES[mode], delay=60)
+
+    # B: 지금 모드의 값 보여 주기
+    if button_b.was_pressed():
+        if mode == 0:
+            display.scroll(str(temperature()) + "C", delay=80)
+        elif mode == 1:
+            display.scroll(str(display.read_light_level()), delay=80)
+        else:
+            display.scroll(str(running_time() // 1000) + "S", delay=80)
+
+    sleep(50)`,
+            desc: 'A 로 기능을 고르고 B 로 값을 확인합니다. 하나의 프로그램에 여러 기능을 담는 <b>모드 전환</b> 방식으로, 4장에서 자세히 배웁니다.',
+            expect: 'A 를 누르면 TEMP → LIGHT → TIME 으로 바뀌고, B 를 누르면 그 값이 흘러갑니다.',
+            nondeterministic: true
+          },
 
           { type: 'h', text: '3교시 요약' },
           {

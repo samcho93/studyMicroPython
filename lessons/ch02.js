@@ -179,6 +179,42 @@ display.show("ABC", delay=1000)   # 더 천천히 바뀐다`,
           { type: 'callout', kind: 'tip', title: '한글은 나오지 않습니다', html: 'micro:bit 의 글꼴에는 <b>영문 · 숫자 · 기호</b>만 들어 있습니다. 한글을 넣으면 <code>?</code> 로 보입니다. 이름은 <code>"MINJUN"</code> 처럼 영문으로 쓰세요.' },
           { type: 'callout', kind: 'board', html: '실제 micro:bit 에서는 LED 25개를 아주 빠르게 번갈아 켜서(멀티플렉싱) 25개가 동시에 켜진 것처럼 보이게 합니다. 그래서 화면을 켜 두면 전류를 꽤 씁니다. 건전지로 오래 쓰려면 <code>display.off()</code> 로 잠시 꺼 두는 것도 방법입니다.' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 숫자와 계산 결과 보여 주기', code: `from microbit import *
+
+display.scroll(2026, delay=90)                 # 숫자도 그대로 된다
+sleep(300)
+display.scroll(3 * 7, delay=90)                # 계산 결과 21
+sleep(300)
+display.scroll("2 X 7 = " + str(2 * 7), delay=90)`,
+            desc: '<code>scroll()</code> 에는 숫자도 바로 넣을 수 있습니다. 다만 <b>글자와 숫자를 <code>+</code> 로 이어 붙일 때</b>는 <code>str()</code> 로 숫자를 글자로 바꿔야 합니다. 3행의 <code>str()</code> 을 지우고 실행해 어떤 오류가 나는지도 확인해 보세요.',
+            expect: '2026 → 21 → 2 X 7 = 14 순서로 흘러갑니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. monospace 옵션 비교', code: `from microbit import *
+
+display.scroll("IIIIIIII", delay=120)                      # 글자 폭이 제각각
+sleep(500)
+display.scroll("IIIIIIII", delay=120, monospace=True)      # 폭이 모두 같음`,
+            desc: '기본은 글자마다 <b>필요한 만큼만</b> 폭을 씁니다(<code>I</code> 는 좁고 <code>M</code> 은 넓습니다). <code>monospace=True</code> 를 주면 모든 글자가 <b>같은 폭</b>이 되어 표처럼 줄이 맞습니다.',
+            expect: '같은 글자가 두 번 흐르는데 두 번째가 더 여유 있게 흐릅니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. show 의 clear 옵션', code: `from microbit import *
+
+# clear=True 면 다 보여 준 뒤 화면을 지운다
+display.show([Image.HEART, Image.HAPPY, Image.DUCK], delay=500, clear=True)
+print("끝난 뒤 화면은 비어 있습니다")
+sleep(1000)
+
+# clear 를 주지 않으면 마지막 그림이 남는다
+display.show([Image.HEART, Image.HAPPY, Image.DUCK], delay=500)
+print("이번에는 오리가 남아 있습니다")`,
+            desc: '<code>clear=True</code> 는 애니메이션이 끝난 뒤 화면을 자동으로 지웁니다. 다음 동작으로 깔끔하게 넘어가고 싶을 때 씁니다.',
+            expect: '세 그림이 지나간 뒤 화면이 비고, 두 번째에는 오리가 남습니다.'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -427,6 +463,48 @@ display.scroll("A")
           },
           { type: 'callout', kind: 'board', title: '실제 보드에서의 오류', html: '실제 micro:bit 는 화면이 작아서 오류를 <b>슬픈 얼굴 + 짧은 메시지</b>로 흘려보냅니다. 예: <code>NameError: name \'displey\' isn\'t defined</code>. USB 로 연결해 이 강좌의 콘솔에서 보면 줄 번호까지 나와 훨씬 편합니다.' },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 주석으로 코드를 껐다 켜기', code: `from microbit import *
+
+display.scroll("A", delay=80)
+# display.scroll("B", delay=80)
+display.scroll("C", delay=80)
+# display.scroll("D", delay=80)`,
+            desc: '지금은 <code>A</code> 와 <code>C</code> 만 흐릅니다. 4행과 6행의 <code>#</code> 을 지웠다 붙였다 하며 실행해 보세요. 프로그램이 길어지면 <b>일부만 잠시 꺼 두고</b> 문제를 찾는 데 아주 유용합니다. (<kbd>Ctrl</kbd>+<kbd>/</kbd>)',
+            expect: 'A 와 C 만 흘러갑니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 들여쓰기 두 단계', code: `from microbit import *
+
+for i in range(2):              # 바깥 반복 2번
+    display.show(i)
+    sleep(300)
+    for j in range(3):          # 안쪽 반복 3번 (8칸 들여쓰기)
+        display.show(Image.HEART)
+        sleep(120)
+        display.clear()
+        sleep(120)
+
+display.scroll("END", delay=70)`,
+            desc: '들여쓰기가 깊어질수록 <b>더 안쪽의 반복</b>입니다. 하트는 <code>2 × 3 = 6</code>번 깜빡입니다. <code>display.clear()</code> 의 들여쓰기를 4칸으로 줄이면 어떻게 되는지도 해 보세요.',
+            expect: '0 → 하트 3번 → 1 → 하트 3번 → END'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 흔한 오류 네 가지 모아 보기', code: `from microbit import *
+
+# 아래 줄들의 # 을 하나씩 지워 가며 어떤 오류가 나는지 확인하세요.
+
+# display.scrol("오타")                      # AttributeError
+# display.show(Image.HERAT)                  # AttributeError
+# display.set_pixel(2, 2, 15)                # ValueError (밝기는 0~9)
+# display.scroll("닫지 않은 괄호"             # SyntaxError
+
+display.scroll("OK", delay=70)`,
+            desc: '오류 메시지의 <b>마지막 줄</b>과 <b>line 번호</b>를 읽는 연습입니다. 콘솔의 줄 번호를 누르면 편집기의 그 줄로 바로 이동합니다. 아래에 나오는 <b>💡 도움말</b> 도 함께 읽어 보세요.',
+            expect: 'OK 가 흘러갑니다. (주석을 지우면 각각 다른 오류가 납니다)'
+          },
+
           { type: 'h', text: '2교시 요약' },
           {
             type: 'list', items: [
@@ -653,6 +731,188 @@ while True:
             nondeterministic: true
           },
           { type: 'callout', kind: 'tip', title: 'display.clear() 를 잊지 마세요', html: '<code>display.show()</code> 로 띄운 그림은 <b>계속 남아 있습니다</b>. 다음 그림을 보여 주기 전이나 프로그램이 끝날 때 <code>display.clear()</code> 로 지워 주면 깔끔합니다.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. range() 의 세 가지 모양', code: `from microbit import *
+
+print("range(5):", list(range(5)))              # 0 1 2 3 4
+print("range(2, 6):", list(range(2, 6)))        # 2 3 4 5
+print("range(0, 10, 3):", list(range(0, 10, 3)))# 0 3 6 9
+print("range(4, 0, -1):", list(range(4, 0, -1)))# 4 3 2 1
+
+# 0 부터 4 까지 한 칸씩 점 찍기
+for x in range(5):
+    display.set_pixel(x, 2, 9)
+    sleep(200)`,
+            desc: '<code>range(끝)</code> · <code>range(시작, 끝)</code> · <code>range(시작, 끝, 간격)</code> 세 가지가 있습니다. <b>끝 값은 포함하지 않습니다.</b> 간격을 음수로 주면 거꾸로 셉니다.',
+            expect: 'range(5): [0, 1, 2, 3, 4]\nrange(2, 6): [2, 3, 4, 5]\nrange(0, 10, 3): [0, 3, 6, 9]\nrange(4, 0, -1): [4, 3, 2, 1]'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. while 로 조건이 맞는 동안만 반복', code: `from microbit import *
+
+n = 5
+while n > 0:                   # n 이 0보다 큰 동안 반복
+    display.show(n)
+    sleep(600)
+    n = n - 1                  # ← 이 줄이 없으면 영원히 반복!
+
+display.show(Image.HAPPY)
+print("끝")`,
+            desc: '<code>while True:</code> 는 “항상 참” 이라 끝없이 반복하지만, <code>while n &gt; 0:</code> 처럼 <b>조건</b>을 주면 조건이 거짓이 되는 순간 반복을 빠져나옵니다. <code>n = n - 1</code> 을 지우면 절대 끝나지 않으니 주의하세요.',
+            expect: '5 → 4 → 3 → 2 → 1 이 보인 뒤 웃는 얼굴'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 중첩 반복으로 화면 전체 훑기', code: `from microbit import *
+
+# 왼쪽 위부터 오른쪽 아래까지 한 칸씩 차례로 켠다
+display.clear()
+for y in range(5):             # 세로 5줄
+    for x in range(5):         # 가로 5칸
+        display.set_pixel(x, y, 9)
+        sleep(60)
+
+sleep(500)
+
+# 거꾸로 하나씩 끈다
+for y in range(4, -1, -1):
+    for x in range(4, -1, -1):
+        display.set_pixel(x, y, 0)
+        sleep(60)`,
+            desc: '반복 안의 반복으로 <b>모든 칸</b>을 훑습니다. 바깥이 5번, 안쪽이 5번이므로 모두 <code>5 × 5 = 25</code>번 실행됩니다. 화면 전체를 다루는 프로그램의 기본 형태입니다.',
+            expect: '왼쪽 위부터 차례로 켜졌다가 오른쪽 아래부터 차례로 꺼집니다.'
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 화면과 반복으로 만드는 것들' },
+          { type: 'p', html: '2장에서 배운 <b>scroll · show · sleep · 반복</b> 만으로도 쓸 만한 프로그램을 만들 수 있습니다. 코드를 읽고 실행한 뒤, 맨 위의 설정값을 바꿔 가며 내 것으로 만들어 보세요.' },
+          {
+            type: 'code', title: '응용 예제 2-1. 초 단위 디지털 시계', code: `from microbit import *
+
+display.scroll("CLOCK", delay=60)
+
+while True:
+    t = running_time() // 1000          # 켜진 뒤 지난 초
+    m = t // 60                          # 분
+    s = t % 60                           # 초
+
+    # 분:초 형태로 흘려보낸다 (예: 2:07)
+    display.scroll(str(m) + ":" + str(s // 10) + str(s % 10), delay=80)
+    sleep(500)`,
+            desc: '<code>//</code> 는 몫, <code>%</code> 는 나머지입니다. <code>s // 10</code> 과 <code>s % 10</code> 으로 십의 자리와 일의 자리를 나눠 <b>07</b> 처럼 두 자리로 맞췄습니다.',
+            expect: '0:00 → 0:01 → … 형태로 흐릅니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 2-2. 모스 부호 송신기', code: `from microbit import *
+
+DOT, DASH = 200, 600         # 점 · 선의 길이(ms)
+full = Image("99999:99999:99999:99999:99999")
+
+# 보낼 글자와 모스 부호 (점 = ., 선 = -)
+CODE = {
+    "S": "...", "O": "---", "A": ".-", "B": "-...",
+    "H": "....", "E": ".", "L": ".-..", "P": ".--.",
+}
+MESSAGE = "SOS"              # ← 바꿔 보세요 (위 표에 있는 글자만)
+
+
+def signal(mark):
+    display.show(full)
+    sleep(DASH if mark == "-" else DOT)
+    display.clear()
+    sleep(DOT)
+
+
+while True:
+    for ch in MESSAGE:
+        display.show(ch)
+        sleep(400)
+        display.clear()
+        sleep(200)
+        for mark in CODE[ch]:
+            signal(mark)
+        sleep(500)           # 글자 사이 쉼
+    sleep(1500)              # 한 바퀴 끝`,
+            desc: '<code>for ch in MESSAGE:</code> 는 문자열에서 <b>글자를 하나씩</b> 꺼냅니다. <code>CODE[ch]</code> 로 그 글자의 모스 부호를 찾아 점(짧게)과 선(길게)으로 깜빡입니다. 글자를 먼저 보여 준 뒤 신호를 보내므로 배우기도 좋습니다.',
+            expect: 'S → · · · → O → ─ ─ ─ → S → · · · 를 반복합니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 2-3. 로딩 바 · 진행률 표시', code: `from microbit import *
+
+STEPS = 25               # 25칸 = 화면 전체
+DELAY = 120
+
+display.scroll("LOAD", delay=60)
+
+while True:
+    display.clear()
+    for i in range(STEPS):
+        x = i % 5
+        y = i // 5
+        display.set_pixel(x, y, 9)
+        sleep(DELAY)
+
+    # 다 찼으면 세 번 깜빡이고 다시
+    for i in range(3):
+        display.clear()
+        sleep(150)
+        display.show(Image("99999:99999:99999:99999:99999"))
+        sleep(150)
+    sleep(500)`,
+            desc: '<code>i % 5</code> 가 가로 위치, <code>i // 5</code> 가 세로 위치입니다. 한 개의 숫자로 <b>2차원 좌표</b>를 만드는 자주 쓰는 방법입니다. 오래 걸리는 작업의 진행률을 보여 줄 때 이렇게 씁니다.',
+            expect: '왼쪽 위부터 한 칸씩 차올라 화면이 가득 차면 세 번 깜빡입니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 2-4. 메트로놈 (박자 맞추기)', code: `from microbit import *
+import music
+
+BPM = 90                 # 1분에 몇 박 (60~180 사이로 바꿔 보세요)
+BEATS = 4                # 몇 박자마다 강박
+
+interval = 60000 // BPM  # 한 박의 길이(ms)
+beat = 0
+
+display.scroll(str(BPM), delay=70)
+
+while True:
+    beat = beat % BEATS + 1
+
+    if beat == 1:
+        display.show(Image("99999:99999:99999:99999:99999"))   # 강박
+        music.pitch(1200, 60)
+    else:
+        display.show(Image("00000:00000:00900:00000:00000"))   # 약박
+        music.pitch(800, 40)
+
+    sleep(120)
+    display.show(beat)
+    sleep(interval - 120)`,
+            desc: '<code>60000 // BPM</code> 으로 한 박의 길이를 계산합니다. 첫 박만 크게(강박) 표시하고 나머지는 작게(약박) 합니다. 음악 시간에 바로 쓸 수 있습니다.',
+            expect: 'BPM 에 맞춰 “딱 · 딱 · 딱 · 딱” 소리와 함께 1 · 2 · 3 · 4 가 표시됩니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 2-5. 한 글자씩 나타나는 타이핑 전광판', code: `from microbit import *
+
+MESSAGE = "HELLO"
+CHAR_MS = 500            # 한 글자를 보여 주는 시간
+GAP_MS = 120             # 글자 사이 쉼
+
+while True:
+    # ① 한 글자씩 또박또박
+    for ch in MESSAGE:
+        display.show(ch)
+        sleep(CHAR_MS)
+        display.clear()
+        sleep(GAP_MS)
+
+    sleep(600)
+
+    # ② 같은 문장을 흘려서 한 번 더
+    display.scroll(MESSAGE, delay=90)
+    sleep(800)`,
+            desc: '같은 문장을 <b>두 가지 방식</b>으로 보여 줍니다. 짧은 단어는 ① 방식이, 긴 문장은 ② 방식이 읽기 좋습니다. <code>display.show(MESSAGE, delay=500)</code> 한 줄로도 ①과 거의 같은 효과를 낼 수 있습니다 — 비교해 보세요.',
+            expect: 'H · E · L · L · O 가 하나씩 나타난 뒤, 같은 글자가 흘러갑니다.'
+          },
 
           { type: 'h', text: '3교시 · 2장 요약' },
           {

@@ -220,6 +220,50 @@ while True:
             expect: '위쪽 두 줄(빨강) → 가운데(노랑) → 아래 두 줄(초록) 순서로 반복됩니다.'
           },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 쓸 수 있는 이미지 세어 보기', code: `from microbit import *
+
+names = [n for n in dir(Image) if n.isupper()]
+print("쓸 수 있는 이미지:", len(names), "개")
+for n in names:
+    print(" -", n)
+
+display.scroll(str(len(names)), delay=80)`,
+            desc: '<code>dir(Image)</code> 가 돌려주는 이름 중 <b>대문자로만 된 것</b>이 이미지입니다. <code>[n for n in … if …]</code> 는 조건에 맞는 것만 골라 새 리스트를 만드는 <b>리스트 컴프리헨션</b> 입니다.',
+            expect: '쓸 수 있는 이미지: 60 개\n - ALL_ARROWS\n - ALL_CLOCKS\n - ANGRY …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 대기 표시 만들기', code: `from microbit import *
+
+display.scroll("WAIT", delay=60)
+
+# 시계는 12장, 화살표는 8장이 들어 있는 리스트
+for turn in range(2):
+    display.show(Image.ALL_CLOCKS, delay=70)
+for turn in range(2):
+    display.show(Image.ALL_ARROWS, delay=110)
+
+display.show(Image.YES)
+sleep(800)
+display.clear()`,
+            desc: '<code>Image.ALL_CLOCKS</code> 와 <code>Image.ALL_ARROWS</code> 는 <b>이미 여러 장이 담긴 리스트</b>입니다. 그대로 <code>show()</code> 에 넣으면 애니메이션이 됩니다.',
+            expect: '시계가 두 바퀴, 화살표가 두 바퀴 돈 뒤 체크 표시'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 표정 슬라이드쇼', code: `from microbit import *
+
+FACES = [Image.HAPPY, Image.SAD, Image.ANGRY, Image.CONFUSED,
+         Image.SURPRISED, Image.ASLEEP, Image.SILLY, Image.FABULOUS,
+         Image.MEH, Image.SMILE]
+
+# 리스트를 그대로 넘기면 차례로 바뀐다 (끝없이 반복)
+display.show(FACES, delay=700, loop=True)`,
+            desc: '표정 10가지가 계속 바뀝니다. <code>delay</code> 를 줄이면 훨씬 빠르게 지나갑니다. 리스트에 담아 두면 <b>단 한 줄</b>로 애니메이션이 만들어집니다.',
+            expect: '표정이 0.7초마다 바뀌기를 반복합니다. (■ 정지)'
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -458,6 +502,57 @@ while True:
             expect: '가운데 밝기: 7\n왼쪽 위 밝기: 0\n(가운데 LED 가 깜빡입니다)'
           },
           { type: 'callout', kind: 'warn', title: '좌표는 0~4 까지만', html: '<code>display.set_pixel(5, 0, 9)</code> 처럼 범위를 벗어나면 <code>ValueError: index out of bounds</code> 가 납니다. 밝기도 <b>0~9</b> 를 벗어나면 오류입니다.' },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 화면을 읽어 콘솔에 그리기', code: `from microbit import *
+
+display.show(Image.HEART)
+sleep(300)
+
+# 화면의 25칸을 읽어 콘솔에 그대로 찍어 본다
+for y in range(5):
+    row = ""
+    for x in range(5):
+        row = row + ("#" if display.get_pixel(x, y) > 0 else ".")
+    print(row)`,
+            desc: '<code>get_pixel()</code> 로 현재 화면을 읽어 <code>#</code> 과 <code>.</code> 으로 다시 그렸습니다. 화면 상태를 <b>확인(디버깅)</b>할 때 아주 유용한 방법입니다.',
+            expect: '.#.#.\n#####\n#####\n.###.\n..#..'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 밝기로 그라데이션 애니메이션', code: `from microbit import *
+
+while True:
+    # 왼쪽에서 오른쪽으로 밝기가 흐른다
+    for t in range(10):
+        for x in range(5):
+            for y in range(5):
+                b = (t + x) % 10
+                display.set_pixel(x, y, b)
+        sleep(90)`,
+            desc: '<code>(t + x) % 10</code> 으로 <b>열마다 밝기를 한 단계씩 어긋나게</b> 주면 빛이 흐르는 것처럼 보입니다. <code>x</code> 를 <code>y</code> 로 바꾸면 세로로 흐릅니다.',
+            expect: '밝기 물결이 왼쪽에서 오른쪽으로 흐릅니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 큰 그림에서 잘라 내기 (crop)', code: `from microbit import *
+
+# 10칸 × 5줄짜리 큰 그림
+big = Image("9000000009:"
+            "0900000090:"
+            "0090000900:"
+            "0009009000:"
+            "0000990000")
+
+print("크기:", big.width(), "x", big.height())
+
+# 5칸 창을 오른쪽으로 옮겨 가며 들여다본다
+while True:
+    for x in range(big.width() - 4):
+        display.show(big.crop(x, 0, 5, 5))
+        sleep(200)`,
+            desc: '<code>Image</code> 는 <b>5×5 보다 클 수도</b> 있습니다. <code>crop(x, y, 폭, 높이)</code> 로 원하는 부분만 잘라 내면 큰 그림을 훑어보는 효과가 됩니다 — <code>scroll()</code> 이 하는 일과 같은 원리입니다.',
+            expect: '크기: 10 x 5\n(V 자 모양이 오른쪽으로 지나갑니다)'
+          },
 
           { type: 'h', text: '2교시 요약' },
           {
@@ -756,6 +851,191 @@ while True:
     sleep(600)`,
             desc: '<code>invert()</code> 는 켜진 곳은 끄고, 꺼진 곳은 켭니다. 네거티브 필름처럼 보입니다.',
             expect: '웃는 얼굴과 그 반전이 번갈아 나타납니다.'
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 대각선으로 움직이기', code: `from microbit import *
+
+heart = Image.HEART
+
+while True:
+    # shift 를 두 번 겹치면 대각선이 된다
+    for i in range(5, -6, -1):
+        display.show(heart.shift_left(i).shift_up(i))
+        sleep(110)`,
+            desc: '<code>shift_left()</code> 의 결과에 다시 <code>shift_up()</code> 을 이어 붙이면 <b>대각선 이동</b>이 됩니다. 이렇게 메서드를 <b>연달아 부르는 것</b>을 체이닝이라고 합니다.',
+            expect: '하트가 오른쪽 아래에서 왼쪽 위로 대각선으로 지나갑니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 빼기로 구멍 뚫기', code: `from microbit import *
+
+full = Image("99999:99999:99999:99999:99999")
+
+while True:
+    # 가운데가 점점 커지며 뚫린다
+    for hole in [Image.DIAMOND_SMALL, Image.DIAMOND, Image.SQUARE_SMALL, Image.SQUARE]:
+        display.show(full - hole)
+        sleep(350)
+    display.show(full)
+    sleep(350)`,
+            desc: '<code>A - B</code> 는 A 에서 B 만큼 <b>밝기를 뺍니다</b>(최소 0). 밝은 배경에서 모양만 오려 내는 효과를 만들 수 있습니다.',
+            expect: '꽉 찬 화면에 구멍이 점점 커졌다가 다시 채워집니다.'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 코드로 그림 만들기', code: `from microbit import *
+
+
+def make_ring(r):
+    """가운데(2,2)에서 거리가 r 인 칸만 켠 그림을 만든다"""
+    im = Image()                      # 전부 꺼진 5x5
+    for y in range(5):
+        for x in range(5):
+            d = max(abs(x - 2), abs(y - 2))
+            if d == r:
+                im.set_pixel(x, y, 9)
+    return im
+
+
+while True:
+    for r in [0, 1, 2]:
+        display.show(make_ring(r))
+        sleep(220)`,
+            desc: '<code>Image()</code> 는 <b>전부 꺼진 빈 그림</b>을 만듭니다. 여기에 <code>set_pixel()</code> 로 칠하면 <b>계산으로 그림을 만들</b> 수 있습니다. 문자열로 일일이 적는 것보다 규칙적인 그림에 훨씬 편합니다.',
+            expect: '가운데 점에서 사각 고리가 바깥으로 퍼져 나갑니다.'
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 화면을 자유자재로' },
+          { type: 'p', html: '3장에서 배운 <b>이미지 · 좌표 · 애니메이션 · 연산</b>을 모아 만든 프로그램들입니다. 숫자와 그림을 바꿔 가며 나만의 버전으로 고쳐 보세요.' },
+          {
+            type: 'code', title: '응용 예제 3-1. 심장 박동 모니터', code: `from microbit import *
+import music
+
+BPM = 72                      # 1분에 몇 번 뛸까
+beat = 60000 // BPM
+
+BIG = Image.HEART
+SMALL = Image.HEART_SMALL
+
+while True:
+    # 두근 (강)
+    display.show(BIG)
+    music.pitch(140, 60)
+    sleep(120)
+    display.show(SMALL)
+    sleep(90)
+    # 근 (약)
+    display.show(BIG * 0.6)
+    music.pitch(110, 50)
+    sleep(100)
+    display.clear()
+    sleep(beat - 310)`,
+            desc: '실제 심장 소리처럼 <b>“두 · 근”</b> 두 박을 한 묶음으로 만들었습니다. <code>BIG * 0.6</code> 으로 두 번째 박은 조금 약하게 표현했습니다. <code>BPM</code> 을 바꾸면 심박수가 달라집니다.',
+            expect: '하트가 “두근” 하고 뛰며 낮은 소리가 함께 납니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 3-2. 출렁이는 물결', code: `from microbit import *
+
+# 각 열의 높이가 파도처럼 오르내린다
+WAVE = [0, 1, 2, 3, 4, 3, 2, 1]
+
+while True:
+    for t in range(len(WAVE)):
+        display.clear()
+        for x in range(5):
+            h = WAVE[(t + x) % len(WAVE)]     # 열마다 조금씩 어긋나게
+            for y in range(4, 4 - h - 1, -1):
+                display.set_pixel(x, y, 9 - (4 - y))
+        sleep(120)`,
+            desc: '열마다 파도의 위상을 <b>한 칸씩 어긋나게</b> 주면 물결이 옆으로 흐르는 것처럼 보입니다. <code>9 - (4 - y)</code> 로 위로 갈수록 희미하게 만들어 물보라 느낌을 냈습니다.',
+            expect: '아래쪽에서 물결이 좌우로 출렁입니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 3-3. 따라다니는 눈동자', code: `from microbit import *
+
+
+def eyes(dx, dy):
+    """눈동자가 (dx, dy) 쪽으로 치우친 얼굴"""
+    im = Image()
+    # 눈 흰자 자리
+    im.set_pixel(1, 1, 3)
+    im.set_pixel(3, 1, 3)
+    # 눈동자 (범위를 벗어나지 않게 제한)
+    im.set_pixel(max(0, min(4, 1 + dx)), max(0, min(4, 1 + dy)), 9)
+    im.set_pixel(max(0, min(4, 3 + dx)), max(0, min(4, 1 + dy)), 9)
+    # 입
+    for x in range(1, 4):
+        im.set_pixel(x, 4, 5)
+    return im
+
+
+while True:
+    x = accelerometer.get_x()
+    y = accelerometer.get_y()
+    dx = 1 if x > 350 else (-1 if x < -350 else 0)
+    dy = 1 if y > 350 else (-1 if y < -350 else 0)
+    display.show(eyes(dx, dy))
+    sleep(120)`,
+            hint: '🧭 <b>센서 탭</b>의 기울기 판을 끌면 눈동자가 그쪽을 바라봅니다.',
+            desc: '기울인 방향으로 눈동자가 움직입니다. <code>1 if 조건 else …</code> 는 “조건이 참이면 앞의 값, 아니면 뒤의 값” 이라는 짧은 표현입니다.',
+            expect: '보드를 기울이면 눈동자가 그 방향을 바라봅니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 3-4. 그림과 글자를 섞은 배너', code: `from microbit import *
+
+BANNER = [
+    (Image.HOUSE, "OPEN"),
+    (Image.MUSIC_QUAVER, "PARTY"),
+    (Image.HEART, "WELCOME"),
+    (Image.DUCK, "HAVE FUN"),
+]
+
+while True:
+    for picture, text in BANNER:
+        # 그림이 오른쪽에서 들어온다
+        for i in range(5, -1, -1):
+            display.show(picture.shift_left(i))
+            sleep(70)
+        sleep(400)
+        display.scroll(text, delay=80)
+        sleep(200)`,
+            desc: '리스트 안에 <b>(그림, 글자) 쌍</b>을 담아 두고 하나씩 꺼내 씁니다. 그림이 슥 들어오는 연출을 넣으면 훨씬 완성도가 높아 보입니다. 축제나 학급 행사 안내판으로 써 보세요.',
+            expect: '그림이 슬라이드해 들어온 뒤 글자가 흐르기를 반복합니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 3-5. 픽셀 아트 그리기 도구', code: `from microbit import *
+
+canvas = Image()          # 빈 도화지
+x, y = 0, 0               # 커서 위치
+tick = 0
+
+while True:
+    # A: 커서 이동 (오른쪽 → 줄이 끝나면 다음 줄)
+    if button_a.was_pressed():
+        x = x + 1
+        if x > 4:
+            x = 0
+            y = (y + 1) % 5
+
+    # B: 지금 칸을 켜거나 끄기
+    if button_b.was_pressed():
+        canvas.set_pixel(x, y, 0 if canvas.get_pixel(x, y) else 9)
+
+    # 로고: 완성된 그림 보기 + 코드로 출력
+    if pin_logo.is_touched():
+        display.show(canvas)
+        print(repr(canvas))
+        sleep(1500)
+
+    # 커서는 깜빡이며 표시
+    tick = tick + 1
+    shown = canvas.copy()
+    if tick % 4 < 2:
+        shown.set_pixel(x, y, 9 if canvas.get_pixel(x, y) == 0 else 3)
+    display.show(shown)
+    sleep(120)`,
+            desc: 'A 로 칸을 옮기고 B 로 켜고 끕니다. 로고를 터치하면 완성된 그림이 <code>Image(\'09090:…\')</code> 형태로 <b>콘솔에 출력</b>되므로, 그대로 복사해 다른 프로그램에 쓸 수 있습니다. <code>copy()</code> 로 원본을 건드리지 않고 커서만 겹쳐 그렸습니다.',
+            expect: '커서가 깜빡이며 이동하고, B 로 칸을 칠할 수 있습니다.'
           },
 
           { type: 'h', text: '3교시 · 3장 요약' },

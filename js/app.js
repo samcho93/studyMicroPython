@@ -571,7 +571,9 @@
         case 'code': {
           const id = reg(b.code, b.title, b.repl);
           if (!firstCode && b.run !== false && !b.repl) firstCode = b;
-          return codeBlockHtml(b, id, { tag: b.title && /^예제/.test(b.title) ? '예제' : b.title && /도전|응용/.test(b.title) ? '응용' : '' });
+          const t = b.title || '';
+          const tag = /^예제/.test(t) ? '예제' : /^응용|도전/.test(t) ? '응용' : /더 해 보기/.test(t) ? '추가' : '';
+          return codeBlockHtml(b, id, { tag });
         }
         case 'callout': {
           const icon = { tip: '💡', warn: '⚠️', info: 'ℹ️', more: '📘', board: '🔌' }[b.kind] || 'ℹ️';

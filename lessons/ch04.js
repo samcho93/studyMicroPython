@@ -222,6 +222,64 @@ while True:
             ]
           },
 
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 세 가지 방법을 한눈에', code: `from microbit import *
+
+while True:
+    print("is:", button_a.is_pressed(),
+          "| was:", button_a.was_pressed(),
+          "| B 누적:", button_b.get_presses())
+    sleep(500)`,
+            desc: 'A 를 누른 채로 있어 보고, 짧게 여러 번 눌러도 보세요. <code>is_pressed</code> 는 누른 동안 계속 <code>True</code>, <code>was_pressed</code> 는 <b>한 번만</b>, B 의 <code>get_presses</code> 는 0.5초 동안 누른 횟수를 보여 줍니다.',
+            expect: 'is: False | was: False | B 누적: 0\nis: True | was: True | B 누적: 0 …',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. or 와 not 써 보기', code: `from microbit import *
+
+while True:
+    a = button_a.is_pressed()
+    b = button_b.is_pressed()
+
+    if a or b:                       # 하나라도 눌렸으면
+        display.show(Image.YES)
+    elif not pin_logo.is_touched():  # 로고를 안 만지고 있으면
+        display.show(Image.ASLEEP)
+    else:
+        display.show(Image.HEART)
+    sleep(50)`,
+            desc: '<code>or</code> 는 “둘 중 하나라도”, <code>not</code> 은 “~가 아니면” 입니다. <code>and</code> 와 함께 세 가지만 알면 대부분의 조건을 표현할 수 있습니다.',
+            expect: '버튼을 누르면 체크, 로고를 만지면 하트, 아니면 자는 얼굴'
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 길게 누르기 알아채기', code: `from microbit import *
+
+LONG_MS = 1000
+pressed_at = None
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    if button_a.is_pressed():
+        if pressed_at is None:
+            pressed_at = running_time()          # 누르기 시작한 시각 기록
+        elif running_time() - pressed_at > LONG_MS:
+            display.show(Image.SKULL)            # 길게 누름!
+    else:
+        if pressed_at is not None:
+            held = running_time() - pressed_at
+            print("누른 시간:", held, "ms")
+            display.show(Image.YES if held <= LONG_MS else Image.NO)
+            sleep(400)
+            display.show(Image.SQUARE_SMALL)
+        pressed_at = None
+    sleep(30)`,
+            desc: '<b>누르기 시작한 시각</b>을 기억해 두고 현재 시각과 비교하면 “짧게”와 “길게”를 구분할 수 있습니다. <code>None</code> 은 “아직 값이 없음” 을 나타내는 특별한 값입니다.',
+            expect: '짧게 누르면 체크, 1초 이상 누르면 해골이 뜨고 누른 시간이 콘솔에 나옵니다.',
+            nondeterministic: true
+          },
+
           { type: 'h', text: '1교시 요약' },
           {
             type: 'list', items: [
@@ -491,6 +549,310 @@ while True:
             desc: '리스트에 담아 두면 무작위로 고르기가 쉽습니다. <code>i % 3</code> 은 0, 1, 2, 0, 1, 2 … 로 순환해 “고민하는” 연출이 됩니다.',
             expect: 'A 를 누르면 바위 · 보 · 가위가 돌다가 하나로 멈춥니다.',
             nondeterministic: true
+          },
+
+          { type: 'h', text: '더 해 보기' },
+          {
+            type: 'code', title: '더 해 보기 ①. 더블 클릭 알아채기', code: `from microbit import *
+
+GAP_MS = 400            # 이 시간 안에 또 누르면 더블 클릭
+last_press = -9999
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    if button_a.was_pressed():
+        now = running_time()
+        if now - last_press < GAP_MS:
+            display.show(Image.HEART)       # 더블 클릭!
+            print("더블 클릭")
+            last_press = -9999              # 세 번째 클릭이 또 세지 않도록
+        else:
+            display.show(Image.YES)         # 한 번 클릭
+            print("클릭")
+            last_press = now
+        sleep(300)
+        display.show(Image.SQUARE_SMALL)
+    sleep(30)`,
+            desc: '<b>직전에 누른 시각</b>과 지금을 비교해 간격이 짧으면 더블 클릭으로 봅니다. 마우스 더블 클릭도 똑같은 원리로 동작합니다.',
+            expect: '빠르게 두 번 누르면 하트, 천천히 누르면 체크가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ②. 길게 누르면 빨라지는 숫자 조절', code: `from microbit import *
+
+value = 0
+held = 0
+
+display.show(value % 10)
+
+while True:
+    if button_a.is_pressed():
+        held = held + 1
+        # 오래 누를수록 자주 올라간다
+        step = 1 if held < 10 else (2 if held < 25 else 5)
+        if held % (4 if held < 10 else 1) == 0:
+            value = min(999, value + step)
+            display.show(value % 10)
+    else:
+        held = 0
+
+    if button_b.was_pressed():
+        print("값:", value)
+        display.scroll(str(value), delay=80)
+        display.show(value % 10)
+
+    sleep(60)`,
+            desc: '스마트폰에서 볼륨 버튼을 길게 누르면 빨리 올라가는 것과 같은 방식입니다. <code>held</code> 로 <b>얼마나 오래 누르고 있는지</b>를 세어 증가 폭과 간격을 바꿨습니다. B 를 누르면 지금 값을 확인합니다.',
+            expect: 'A 를 누르고 있으면 숫자가 점점 빨리 올라갑니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '더 해 보기 ③. 터치 3개로 고르는 메뉴', code: `from microbit import *
+import music
+
+PICKS = [
+    ("HEART", Image.HEART, 523),
+    ("STAR", Image.DIAMOND, 659),
+    ("DUCK", Image.DUCK, 784),
+]
+
+display.show(Image.ARROW_N)
+
+while True:
+    for i, pin in enumerate([pin0, pin1, pin2]):
+        if pin.is_touched():
+            name, picture, hz = PICKS[i]
+            display.show(picture)
+            music.pitch(hz, 200)
+            print(i, name)
+            sleep(400)
+            display.show(Image.ARROW_N)
+    sleep(40)`,
+            hint: '보드 그림 아래쪽의 큰 단자 <b>0 · 1 · 2</b> 를 눌러 보세요.',
+            desc: '<code>enumerate()</code> 는 리스트를 돌면서 <b>번호와 값을 함께</b> 꺼내 줍니다. 핀 세 개를 버튼처럼 쓰면 입력 수단이 5개(A · B · 로고 · P0~P2)로 늘어납니다.',
+            expect: '0 · 1 · 2 를 만지면 각각 다른 그림과 소리가 나옵니다.'
+          },
+
+          { type: 'h', text: '🚀 응용 예제 — 버튼으로 만드는 도구들' },
+          { type: 'p', html: '버튼 · 조건문 · 상태 변수만으로 교실에서 바로 쓸 수 있는 도구를 만들어 봅니다. 맨 위의 설정값을 바꿔 우리 반에 맞게 고쳐 보세요.' },
+          {
+            type: 'code', title: '응용 예제 4-1. 투표 집계기', code: `from microbit import *
+import music
+
+yes = 0
+no = 0
+
+display.scroll("VOTE", delay=60)
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    a = button_a.was_pressed()
+    b = button_b.was_pressed()
+
+    if a and b:
+        # 동시에 누르면 결과 발표
+        display.scroll("Y" + str(yes) + " N" + str(no), delay=80)
+        if yes > no:
+            display.show(Image.YES)
+            music.play(music.POWER_UP)
+        elif no > yes:
+            display.show(Image.NO)
+            music.play(music.POWER_DOWN)
+        else:
+            display.show(Image.CONFUSED)
+            music.play(music.BA_DING)
+        sleep(1500)
+        display.show(Image.SQUARE_SMALL)
+    elif a:
+        yes = yes + 1
+        display.show(Image.YES)
+        music.pitch(880, 60)
+        sleep(200)
+        display.show(Image.SQUARE_SMALL)
+    elif b:
+        no = no + 1
+        display.show(Image.NO)
+        music.pitch(440, 60)
+        sleep(200)
+        display.show(Image.SQUARE_SMALL)
+
+    if pin_logo.is_touched():
+        yes, no = 0, 0
+        display.scroll("RESET", delay=60)
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(50)`,
+            desc: 'A 는 찬성, B 는 반대, 두 버튼을 동시에 누르면 결과를 발표합니다. 로고를 만지면 초기화됩니다. 학급 회의에서 바로 써 보세요.',
+            expect: 'A · B 로 표를 모으고, 동시에 누르면 Y3 N1 처럼 결과가 나옵니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 4-2. 스톱워치', code: `from microbit import *
+
+running = False
+start = 0
+elapsed = 0
+
+display.show(Image.SQUARE_SMALL)
+
+while True:
+    # A: 시작 / 멈춤
+    if button_a.was_pressed():
+        if running:
+            elapsed = elapsed + (running_time() - start)
+            running = False
+        else:
+            start = running_time()
+            running = True
+
+    # B: 기록 보기 (멈춘 상태에서는 0으로 초기화)
+    if button_b.was_pressed():
+        total = elapsed + (running_time() - start if running else 0)
+        display.scroll(str(total // 1000) + "." + str(total % 1000 // 100), delay=70)
+        if not running:
+            elapsed = 0
+
+    if running:
+        # 돌아가는 동안 점이 빙글빙글
+        display.show(Image.ALL_CLOCKS[(running_time() // 150) % 12])
+    else:
+        display.show(Image.SQUARE_SMALL)
+
+    sleep(40)`,
+            desc: '<b>멈춘 뒤 다시 이어서</b> 잴 수 있도록 <code>elapsed</code> 에 지금까지의 시간을 쌓아 둡니다. 돌아가는 동안에는 시계 바늘이 돌아 상태를 알려 줍니다. B 를 누르면 <code>12.3</code> 처럼 소수 첫째 자리까지 보여 줍니다.',
+            expect: 'A 로 시작 · 정지, B 로 기록 확인',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 4-3. 퀴즈 버저 (두 명 대결)', code: `from microbit import *
+import random
+import music
+
+display.scroll("READY", delay=60)
+
+while True:
+    # 준비: 아무 버튼도 누르지 않은 상태에서 시작
+    display.show(Image.ASLEEP)
+    button_a.was_pressed()
+    button_b.was_pressed()
+    sleep(random.randint(1500, 4000))
+
+    # 시작 신호!
+    display.show(Image("99999:99999:99999:99999:99999"))
+    music.pitch(1200, 120)
+    t0 = running_time()
+
+    winner = None
+    while winner is None:
+        if button_a.was_pressed():
+            winner = "A"
+        elif button_b.was_pressed():
+            winner = "B"
+        sleep(10)
+
+    ms = running_time() - t0
+    display.scroll(winner + " " + str(ms), delay=70)
+    music.play(music.POWER_UP if winner == "A" else music.JUMP_UP)
+
+    # 다음 판은 로고를 만지면 시작
+    display.show(Image.ARROW_E)
+    while not pin_logo.is_touched():
+        sleep(50)`,
+            desc: '무작위 시간 뒤 화면이 번쩍이면 <b>먼저 누르는 사람이 승리</b>입니다. 반응 시간(ms)도 함께 보여 줍니다. 두 사람이 보드를 사이에 두고 A · B 를 맡으면 바로 대결할 수 있습니다.',
+            expect: '불이 켜진 뒤 먼저 누른 쪽과 반응 시간이 표시됩니다.',
+            nondeterministic: true
+          },
+          {
+            type: 'code', title: '응용 예제 4-4. 손으로 고르는 덧셈 계산기', code: `from microbit import *
+
+a = 0
+b = 0
+stage = 0                 # 0 = 첫 수, 1 = 둘째 수, 2 = 결과
+
+display.show(a)
+
+while True:
+    if stage < 2:
+        # A: 숫자 올리기
+        if button_a.was_pressed():
+            if stage == 0:
+                a = (a + 1) % 10
+                display.show(a)
+            else:
+                b = (b + 1) % 10
+                display.show(b)
+
+        # B: 다음 단계로
+        if button_b.was_pressed():
+            stage = stage + 1
+            if stage == 1:
+                display.scroll("+", delay=80)
+                display.show(b)
+            else:
+                display.scroll(str(a) + "+" + str(b) + "=" + str(a + b), delay=90)
+                display.show(Image.YES)
+
+    # 로고: 처음부터 다시
+    if pin_logo.is_touched():
+        a, b, stage = 0, 0, 0
+        display.show(a)
+        sleep(400)
+
+    sleep(50)`,
+            desc: 'A 로 숫자를 고르고 B 로 다음 단계로 넘어갑니다. <code>stage</code> 변수 하나로 <b>지금 어느 단계인지</b>를 기억하는 것이 핵심입니다. 곱셈이나 뺄셈으로 바꿔 보세요.',
+            expect: '첫 수 고르기 → 둘째 수 고르기 → 3+4=7 처럼 결과가 흐릅니다.'
+          },
+          {
+            type: 'code', title: '응용 예제 4-5. 버튼 비밀번호 잠금장치', code: `from microbit import *
+import music
+
+SECRET = ["A", "A", "B", "A"]       # ← 비밀번호를 바꿔 보세요
+entered = []
+
+display.show(Image.SQUARE)          # 잠김
+
+
+def fail():
+    display.show(Image.NO)
+    music.play(music.POWER_DOWN)
+    sleep(700)
+    display.show(Image.SQUARE)
+
+
+while True:
+    key = None
+    if button_a.was_pressed():
+        key = "A"
+    elif button_b.was_pressed():
+        key = "B"
+
+    if key:
+        entered.append(key)
+        display.show(len(entered))
+        music.pitch(600 + len(entered) * 120, 80)
+        sleep(250)
+
+        if len(entered) == len(SECRET):
+            if entered == SECRET:
+                display.show(Image.YES)
+                music.play(music.POWER_UP)
+                display.scroll("OPEN", delay=70)
+                display.show(Image.SQUARE)
+            else:
+                fail()
+            entered = []
+        else:
+            display.show(Image.SQUARE)
+
+    # 로고: 입력 취소
+    if pin_logo.is_touched() and entered:
+        entered = []
+        fail()
+
+    sleep(40)`,
+            desc: '누른 버튼을 <code>entered</code> 리스트에 쌓고, 길이가 비밀번호와 같아지면 <b>리스트끼리 통째로 비교</b>합니다(<code>entered == SECRET</code>). 입력할 때마다 음이 높아져 몇 자리를 눌렀는지 귀로도 알 수 있습니다.',
+            expect: 'A · A · B · A 순서로 누르면 OPEN, 틀리면 엑스 표시'
           },
 
           { type: 'h', text: '2교시 · 4장 요약' },
