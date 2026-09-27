@@ -10,3 +10,6 @@ __pycache__/
 Thumbs.db
 .DS_Store
 node_modules/
+
+# Claude Code project notes (keep local only)
+CLAUDE.md
