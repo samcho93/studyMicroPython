@@ -11,7 +11,7 @@
   /* 교사용 화면 비밀번호.
    * 정답 · 교사 노트가 학생에게 그냥 보이지 않도록 막는 안전장치일 뿐,
    * 모든 판단이 브라우저 안에서 이루어지므로 보안 수단은 아닙니다. */
-  const TEACHER_PASS = 'microbit';
+  const TEACHER_PASS = 'samcho93';
 
   const app = {
     role: 'student',
@@ -117,7 +117,7 @@
         <button class="btn primary" type="submit">확인</button>
       </form>
       <p id="passMsg" class="muted" style="margin:10px 0 0;font-size:13px">
-        기본 비밀번호는 <code>microbit</code> 입니다. 배포할 때 <code>js/app.js</code> 의 <code>TEACHER_PASS</code> 를 바꿔 주세요.</p>`);
+        교사용 비밀번호를 입력하세요.</p>`);
     setTimeout(() => { const i = $('passInput'); if (i) i.focus(); }, 60);
     $('passForm').onsubmit = (e) => {
       e.preventDefault();
