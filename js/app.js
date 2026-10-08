@@ -85,6 +85,7 @@
   }
 
   function setRole(role, silent) {
+    if (role === 'teacher' && window.SAMSTUDY_ROLE === 'student') role = 'student';
     app.role = role;
     store.set('mb.role', role);
     document.body.classList.toggle('role-teacher', role === 'teacher');
@@ -104,7 +105,8 @@
   app.setView = setView;
 
   /* 한 번 확인하면 그 브라우저에서는 다시 묻지 않습니다 */
-  function teacherVerified() { return store.get('mb.teacherOk', '0') === '1'; }
+  // irodmas.com 회원 구분(window.SAMSTUDY_ROLE): 학생은 교사용 불가, 교사는 비밀번호 없이
+  function teacherVerified() { return window.SAMSTUDY_ROLE === 'teacher' || store.get('mb.teacherOk', '0') === '1'; }
 
   function requireTeacher(then) {
     if (teacherVerified()) return then();
